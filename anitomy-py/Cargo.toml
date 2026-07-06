@@ -18,4 +18,10 @@ crate-type = ["cdylib"]
 anitomy-ng = { path = "../anitomy" }
 # abi3-py39: one compiled wheel per platform works across Python 3.9+,
 # instead of one per CPython minor version.
-pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }
+# generate-import-lib: build Windows wheels (incl. x86) without a matching-arch
+# Python interpreter on the runner — PyO3 generates the import library itself.
+pyo3 = { version = "0.22", features = [
+    "extension-module",
+    "abi3-py39",
+    "generate-import-lib",
+] }
