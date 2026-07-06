@@ -1,0 +1,36 @@
+name: WASM
+
+# Guards the npm/WebAssembly build path: that the binding still compiles to
+# wasm (catches wasm-bindgen/tsify version drift) and that parse() works at
+# runtime. Path-filtered so it only runs when the core crate, the binding, its
+# build script, or the dependency lock change.
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "anitomy/**"
+      - "anitomy-js/**"
+      - "scripts/build-npm.sh"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/wasm.yml"
+  pull_request:
+    paths: *paths
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: jetli/wasm-pack-action@v0.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20" # >=18: wasm-bindgen output uses reference types
+      - run: bash scripts/build-npm.sh
+      - run: node anitomy-js/test/smoke.cjs

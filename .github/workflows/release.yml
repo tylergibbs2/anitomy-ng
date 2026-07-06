@@ -16,6 +16,10 @@ on:
         description: "Publish the anitomy-ng crate to crates.io"
         type: boolean
         default: true
+      npm:
+        description: "Publish the anitomy-ng wasm package to npm"
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -65,3 +69,30 @@ jobs:
       - run: cargo publish -p anitomy-ng
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  publish-npm:
+    if: ${{ inputs.npm }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write # npm provenance (Sigstore attestation via OIDC)
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: jetli/wasm-pack-action@v0.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; Node 20 ships npm 10.
+      - run: npm install -g npm@latest
+      - run: bash scripts/build-npm.sh
+      - run: node anitomy-js/test/smoke.cjs # fails the release if the build is broken
+      - name: Publish to npm
+        working-directory: dist-npm
+        # Tokenless: authenticates via GitHub OIDC against the trusted publisher
+        # configured on npmjs.com, and attaches signed build provenance.
+        run: npm publish --provenance --access public

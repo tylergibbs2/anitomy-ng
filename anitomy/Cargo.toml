@@ -13,7 +13,12 @@ categories = ["parser-implementations"]
 # Pure Rust, no C deps, so wheel builds stay portable. Used for direct ports
 # of upstream's std::regex patterns (episode/season/volume/resolution number
 # matching); hand-rolled char-scanners caused transcription bugs.
-regex = "1"
+# default-features off: every pattern uses ASCII classes ([0-9], [A-Za-z], ...)
+# plus a few literal characters (第, 話, 期, ×) — no \d/\w/\p{}/(?i)/. that would
+# need the Unicode tables. Dropping them shrinks the wasm build (and native
+# binary) substantially; conformance is unchanged (tests/known_failures + the
+# suites confirm it).
+regex = { version = "1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -1,0 +1,26 @@
+[package]
+name = "anitomy-js"
+description = "WebAssembly/npm bindings for the anitomy-ng anime filename parser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+# Published to npm (via wasm-pack), not to crates.io.
+publish = false
+
+[lib]
+# cdylib for the wasm artifact; rlib so the crate can still be unit-tested.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anitomy-ng = { path = "../anitomy" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+# Derives the TypeScript `.d.ts` types (Element/ElementKind/Options) from the
+# Rust types so the npm package ships real types, not `any`.
+tsify-next = "0.5"
+
+[package.metadata.wasm-pack.profile.release]
+# Shrink the wasm (regex + Unicode tables are the main weight).
+wasm-opt = ["-Oz"]

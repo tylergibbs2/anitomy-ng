@@ -37,6 +37,12 @@ Python (wheels built via [maturin](https://www.maturin.rs/)):
 pip install anitomy-ng
 ```
 
+JavaScript / TypeScript (WebAssembly, works in Node and bundlers):
+
+```sh
+npm install anitomy-ng
+```
+
 ## Usage
 
 Rust:
@@ -62,8 +68,20 @@ for element in anitomy_ng.parse(
     print(element.kind, element.value)
 ```
 
-Both return an ordered list of elements (position in the filename, kind, and
-value); `ElementKind`/`kind` covers title, episode, season, release group,
+JavaScript / TypeScript:
+
+```ts
+import { parse } from "anitomy-ng";
+
+for (const element of parse(
+  "[TaigaSubs]_Toradora!_(2008)_-_01v2_-_Tiger_and_Dragon_[1280x720_H.264_FLAC][1234ABCD].mkv",
+)) {
+  console.log(element.kind, element.value);
+}
+```
+
+All three return an ordered list of elements (position in the filename, kind,
+and value); `ElementKind`/`kind` covers title, episode, season, release group,
 video/audio terms, resolution, checksum, and so on — see
 [`anitomy/src/element.rs`](anitomy/src/element.rs) for the full set.
 

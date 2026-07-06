@@ -29,6 +29,11 @@ anitomy-py/python/anitomy_ng/*.pdb
 scripts/adapters/rapptz/target/
 scripts/adapters/rapptz/Cargo.lock
 
+# npm / wasm build outputs
+/dist-npm/
+anitomy-js/pkg/
+node_modules/
+
 # Editors
 .idea/
 *.swp
