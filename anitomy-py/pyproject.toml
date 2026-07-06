@@ -1,0 +1,61 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "anitomy-ng"
+description = "Anime video filename parser (Python bindings for the anitomy-ng Rust crate)"
+readme = "../README.md"
+requires-python = ">=3.9"
+license = { text = "MPL-2.0" }
+classifiers = [
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Typing :: Typed",
+]
+keywords = ["anime", "parser", "filename", "anitomy"]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/tylergibbs2/anitomy-ng"
+Issues = "https://github.com/tylergibbs2/anitomy-ng/issues"
+
+[project.optional-dependencies]
+test = ["pytest"]
+lint = ["ruff>=0.11", "pyright>=1.1.400"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+# python/ is the shipped package, tests/ the suite; .venv and build/ dist are
+# auto-excluded by ruff, so no explicit exclude needed.
+src = ["python", "tests"]
+
+[tool.ruff.lint]
+# E/F: pyflakes+pycodestyle, I: import sorting, UP: pyupgrade (the code already
+# leans on `from __future__ import annotations`), B: bugbear.
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+# Keep `from x import A, b as c` on one line rather than splitting the alias out.
+combine-as-imports = true
+
+[tool.pyright]
+include = ["python", "tests"]
+# python/ holds the `anitomy_ng` package; on the path so `tests/` imports resolve.
+# The compiled `_anitomy` is resolved via its adjacent `_anitomy.pyi` stub, so no
+# build step is required to type-check.
+extraPaths = ["python"]
+pythonVersion = "3.9"
+typeCheckingMode = "standard"
+# Resolve third-party deps (pytest) from the uv-managed virtualenv.
+venvPath = "."
+venv = ".venv"
+
+[tool.maturin]
+# Compiled extension lands at python/anitomy_ng/_anitomy*.so, imported by
+# python/anitomy_ng/__init__.py — see that file and src/lib.rs for why.
+python-source = "python"
+module-name = "anitomy_ng._anitomy"
+features = ["pyo3/extension-module"]

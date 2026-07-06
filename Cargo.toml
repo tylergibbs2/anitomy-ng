@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["anitomy", "anitomy-py"]
+# Benchmark adapter for an external crate; its own workspace, built only by
+# .github/workflows/benchmark.yml (see scripts/adapters/).
+exclude = ["scripts/adapters/rapptz"]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+license = "MPL-2.0"
+repository = "https://github.com/tylergibbs2/anitomy-ng"

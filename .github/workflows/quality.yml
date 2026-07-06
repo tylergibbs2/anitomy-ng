@@ -1,0 +1,36 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  python-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: anitomy-py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      # pyright checks tests/ too, which import pytest, so pull in both extras.
+      - run: uv sync --extra lint --extra test
+      - name: ruff check
+        run: uv run ruff check .
+      - name: ruff format --check
+        run: uv run ruff format --check .
+      - name: pyright
+        run: uv run pyright

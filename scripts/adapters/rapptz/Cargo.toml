@@ -1,0 +1,18 @@
+# Benchmark adapter for Rapptz/anitomy-rs. Built by .github/workflows/benchmark.yml,
+# which sets the pinned git revision via `cargo update -p anitomy --precise`
+# (or edits the branch below). Not part of the anitomy-ng workspace.
+[package]
+name = "rapptz-adapter"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anitomy = { git = "https://github.com/Rapptz/anitomy-rs", branch = "master" }
+serde_json = "1"
+
+[[bin]]
+name = "rapptz-adapter"
+path = "src/main.rs"
+
+[workspace]

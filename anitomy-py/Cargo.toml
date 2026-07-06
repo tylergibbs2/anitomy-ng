@@ -1,0 +1,21 @@
+[package]
+name = "anitomy-ng-py"
+description = "Python bindings for the anitomy-ng crate"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+# Compiled as the private `_anitomy` submodule; `python/anitomy_ng/__init__.py`
+# is the actual public, strongly-typed Python API (see pyproject.toml's
+# `tool.maturin.module-name`).
+name = "_anitomy"
+crate-type = ["cdylib"]
+
+[dependencies]
+anitomy-ng = { path = "../anitomy" }
+# abi3-py39: one compiled wheel per platform works across Python 3.9+,
+# instead of one per CPython minor version.
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }

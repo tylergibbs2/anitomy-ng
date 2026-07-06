@@ -1,0 +1,110 @@
+name: Conformance benchmark
+
+# Scores anitomy-ng against reference parsers over the shared fixture corpus
+# (scripts/benchmark.py) and publishes the table to the run summary + an
+# artifact. Not a gate — it tracks how we compare to the still-evolving
+# reference projects over time. Runs on demand and monthly.
+#
+# The compiled reference engines (erengy/anitomy develop + master, Rapptz)
+# are built here from their live default branches via the adapters in
+# scripts/adapters/. Each build is continue-on-error: if one fails, benchmark.py
+# just reports that engine as skipped, so the run still produces a table.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of each month
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v5
+      - run: touch refs.md # accumulates the exact reference versions compared against
+
+      # anitomy-ng (built from this checkout) + anitopy are in-process engines.
+      - name: Build anitomy-ng extension
+        working-directory: anitomy-py
+        run: uv sync
+
+      # --- Rapptz/anitomy-rs (Rust) --------------------------------------
+      - name: Build Rapptz adapter
+        id: rapptz
+        continue-on-error: true
+        run: |
+          cargo build --release --manifest-path scripts/adapters/rapptz/Cargo.toml
+          cat > engine_rapptz.json <<JSON
+          {"name":"rapptz","schema":"current","cmd":["$GITHUB_WORKSPACE/scripts/adapters/rapptz/target/release/rapptz-adapter"]}
+          JSON
+          rev=$(grep -A2 'name = "anitomy"' scripts/adapters/rapptz/Cargo.lock | grep -o '#[0-9a-f]\{40\}' | tr -d '#' | cut -c1-9)
+          echo "- rapptz: Rapptz/anitomy-rs@${rev:-master}" >> refs.md
+
+      # --- erengy/anitomy @ develop (C++23, header-only) -----------------
+      - uses: actions/checkout@v4
+        with:
+          repository: erengy/anitomy
+          ref: develop
+          path: _ref/anitomy-develop
+      - name: Build anitomy (develop) adapter
+        id: anitomy_develop
+        continue-on-error: true
+        run: |
+          sudo apt-get update && sudo apt-get install -y g++-14
+          g++-14 -std=c++23 -O2 -I_ref/anitomy-develop/include \
+            scripts/adapters/anitomy_develop.cpp -o "$GITHUB_WORKSPACE/develop-adapter"
+          cat > engine_anitomy_develop.json <<JSON
+          {"name":"anitomy_develop","schema":"current","cmd":["$GITHUB_WORKSPACE/develop-adapter"]}
+          JSON
+          echo "- anitomy_develop: erengy/anitomy@$(git -C _ref/anitomy-develop rev-parse --short HEAD)" >> refs.md
+
+      # --- erengy/anitomy @ master (C++14, compiled sources) -------------
+      - uses: actions/checkout@v4
+        with:
+          repository: erengy/anitomy
+          ref: master
+          path: _ref/anitomy-master
+      - name: Build anitomy (master) adapter
+        id: anitomy_master
+        continue-on-error: true
+        run: |
+          g++ -std=c++14 -O2 -I_ref/anitomy-master \
+            scripts/adapters/anitomy_master.cpp _ref/anitomy-master/anitomy/*.cpp \
+            -o "$GITHUB_WORKSPACE/master-adapter"
+          cat > engine_anitomy_master.json <<JSON
+          {"name":"anitomy_master","schema":"old","cmd":["$GITHUB_WORKSPACE/master-adapter"]}
+          JSON
+          echo "- anitomy_master: erengy/anitomy@$(git -C _ref/anitomy-master rev-parse --short HEAD)" >> refs.md
+
+      - name: Assemble engines-config
+        run: |
+          python3 - <<'PY'
+          import glob, json
+          engines = [json.load(open(f)) for f in sorted(glob.glob("engine_*.json"))]
+          json.dump(engines, open("engines-config.json", "w"))
+          print(f"{len(engines)} external engine(s):", [e["name"] for e in engines])
+          PY
+
+      - name: Run benchmark
+        working-directory: anitomy-py
+        run: |
+          uv run --with anitopy==2.1.1 python ../scripts/benchmark.py \
+            --engines-config ../engines-config.json --out ../benchmark.md
+
+      - name: Publish to run summary
+        if: always()
+        run: |
+          cat benchmark.md >> "$GITHUB_STEP_SUMMARY"
+          echo -e "\n## Reference versions\n" >> "$GITHUB_STEP_SUMMARY"
+          cat refs.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-benchmark
+          path: |
+            benchmark.md
+            refs.md

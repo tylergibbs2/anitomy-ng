@@ -1,0 +1,13 @@
+[
+  {
+    "input": "Sasameki Koto E02: Cute People.mkv",
+    "source": "self-rolled",
+    "note": "github.com/erengy/anitomy issue #37 -- colon between an episode marker and the episode title wasn't a recognized delimiter, so the whole filename fell back to being the title. Fixed by adding ':' to detail/delimiter.rs's is_delimiter (verified against upstream's develop/master headers: neither treats it as a delimiter either, so this is a beyond-upstream fix, not a missed port detail).",
+    "output": {
+      "title": "Sasameki Koto",
+      "episode": "02",
+      "episode_title": "Cute People",
+      "file_extension": "mkv"
+    }
+  }
+]

@@ -1,0 +1,20 @@
+[package]
+name = "anitomy-ng"
+description = "Anime video filename parser (Rust port of erengy/anitomy)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
+keywords = ["anime", "parser", "filename", "anitomy"]
+categories = ["parser-implementations"]
+
+[dependencies]
+# Pure Rust, no C deps, so wheel builds stay portable. Used for direct ports
+# of upstream's std::regex patterns (episode/season/volume/resolution number
+# matching); hand-rolled char-scanners caused transcription bugs.
+regex = "1"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
