@@ -7,9 +7,9 @@ name = "anitomy-ng"
 description = "Anime video filename parser (Python bindings for the anitomy-ng Rust crate)"
 readme = "../README.md"
 requires-python = ">=3.9"
-license = { text = "MPL-2.0" }
+license = "MPL-2.0"
+license-files = ["LICENSE"]
 classifiers = [
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Typing :: Typed",

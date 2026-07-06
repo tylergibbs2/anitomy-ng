@@ -46,6 +46,10 @@ jobs:
           packages-dir: dist
           # PEP 740 signed provenance for each artifact (default, kept explicit).
           attestations: true
+          # Don't fail if a file for this version is already on PyPI — lets a
+          # re-run top up a partial upload (e.g. add a missing sdist) instead of
+          # erroring on the wheels that already published.
+          skip-existing: true
 
   publish-crate:
     if: ${{ inputs.crate }}
