@@ -15,7 +15,7 @@ than each project graded on its own bundled data. Emits a Markdown table.
 
 Two kinds of engine:
 - Python engines, called in-process: `anitomy_ng` (required) and, if installed,
-  `anitopy`.
+  `anitopy` and `aniparse` (github.com/MeGaNeKoS/Aniparse).
 - External engines, described by --engines-config JSON as
   `[{"name": "...", "label": "...", "schema": "current"|"old", "cmd": ["..."]}]`.
   Each command is run once; the benchmark writes every corpus input to its stdin
@@ -102,6 +102,60 @@ def _safe_parse(parse: object, inp: str, schema: str) -> Grouped:
     return _to_current(raw, schema)
 
 
+def _from_aniparse(raw: dict) -> Grouped:
+    """Flatten aniparse's nested schema to current-ElementKind grouped form.
+
+    aniparse (github.com/MeGaNeKoS/Aniparse) has its own structured output:
+    `series: [{title, type, year:[{number}], season:[{number}],
+    episode:[{number} | {start:{number}, end:{number}}]}]` plus flat term
+    lists. Numbers come back as ints (so `4`, not `04`) and `type` is
+    lowercased — its own conventions, preserved here rather than normalized, so
+    the score reflects what the library actually emits.
+    """
+    out: Grouped = {}
+
+    def add(key: str, values: object) -> None:
+        if not values:
+            return
+        seq = values if isinstance(values, list) else [values]
+        out.setdefault(key, []).extend(str(v) for v in seq if v is not None)
+
+    add("release_group", raw.get("release_group"))
+    add("release_information", raw.get("release_information"))
+    add("source", raw.get("source"))
+    add("audio_term", raw.get("audio_term"))
+    add("video_term", raw.get("video_term"))
+    add("subtitles", raw.get("subs_term"))
+    add("language", raw.get("language_term"))
+    add("file_checksum", raw.get("file_checksum"))
+    add("file_extension", raw.get("file_extension"))
+    for vr in raw.get("video_resolution") or []:
+        if isinstance(vr, dict):
+            width, height, scan = vr.get("video_width"), vr.get("video_height"), vr.get("scan_method")
+            if width and height:
+                add("video_resolution", f"{width}x{height}")
+            elif height:
+                add("video_resolution", f"{height}{scan or ''}")
+        else:
+            add("video_resolution", vr)
+    for series in raw.get("series") or []:
+        if not isinstance(series, dict):
+            continue
+        add("title", series.get("title"))
+        add("type", series.get("type"))
+        for year in series.get("year") or []:
+            add("year", year.get("number"))
+        for season in series.get("season") or []:
+            add("season", season.get("number"))
+        for ep in series.get("episode") or []:
+            if "number" in ep:
+                add("episode", ep.get("number"))
+            else:  # a range: {start: {number}, end: {number}}
+                add("episode", (ep.get("start") or {}).get("number"))
+                add("episode", (ep.get("end") or {}).get("number"))
+    return out
+
+
 def python_engine(name: str) -> dict[str, Grouped] | None:
     """Run an in-process Python parser over the corpus, or None if unavailable."""
     inputs = all_inputs(load_corpus())
@@ -125,6 +179,19 @@ def python_engine(name: str) -> dict[str, Grouped] | None:
         except ImportError:
             return None
         return {inp: _safe_parse(anitopy.parse, inp, "old") for inp in inputs}
+    if name == "aniparse":
+        try:
+            import aniparse
+        except ImportError:
+            return None
+        results = {}
+        for inp in inputs:
+            try:
+                raw = aniparse.parse(inp) or {}
+            except Exception:  # noqa: BLE001 — a crashing parse is a failed case, not our error
+                raw = {}
+            results[inp] = _from_aniparse(raw) if isinstance(raw, dict) else {}
+        return results
     raise ValueError(f"unknown python engine {name!r}")
 
 
@@ -156,10 +223,30 @@ def external_engine(cmd: list[str], schema: str, inputs: list[str]) -> dict[str,
     return results
 
 
+def _canonical_value(value: str) -> str:
+    """Fold away representation differences so scoring compares parse content,
+    not formatting: integers lose leading zeros (`01` == `1`) and everything
+    else case-folds (`movie` == `Movie`, `10Bit` == `10bit`). Applied to both
+    sides for every engine, so it never lowers a score — it only stops a
+    library's value conventions (e.g. aniparse's integer episode numbers) from
+    masking a correct parse. Genuine differences (`1` vs `10`, `special` vs
+    `specials`) still compare unequal."""
+    value = value.strip()
+    return str(int(value)) if value.isdigit() else value.casefold()
+
+
+def _canonical(grouped: Grouped) -> dict[str, list[str]]:
+    return {k: [_canonical_value(v) for v in vs] for k, vs in grouped.items()}
+
+
 def score(corpus: dict[str, list[dict]], results: dict[str, Grouped]) -> dict[str, tuple[int, int]]:
     per_suite: dict[str, tuple[int, int]] = {}
     for suite, cases in corpus.items():
-        passed = sum(1 for c in cases if results.get(c["input"]) == c["expected"])
+        passed = sum(
+            1
+            for c in cases
+            if _canonical(results.get(c["input"], {})) == _canonical(c["expected"])
+        )
         per_suite[suite] = (passed, len(cases))
     return per_suite
 
@@ -172,6 +259,11 @@ def markdown_table(scores: dict[str, dict[str, tuple[int, int]]], corpus) -> str
         "Each parser scored against every suite's fixtures (its declared ground",
         "truth). Higher is better; the external suites contain cases no parser",
         "passes, so 100% is neither expected nor the goal.",
+        "",
+        "Values are compared representation-agnostically (integers lose leading",
+        "zeros, everything else case-folds), uniformly for every engine, so a",
+        "library's value conventions — e.g. aniparse's integer episode numbers",
+        "(`1` vs `01`) or lowercased `type` — don't distort the comparison.",
         "",
         "| Suite (cases) | " + " | ".join(engines) + " |",
         "|" + "---|" * (len(engines) + 1),
@@ -197,7 +289,7 @@ def main() -> int:
     scores: dict[str, dict[str, tuple[int, int]]] = {}
     skipped: list[str] = []
 
-    for name in ("anitomy_ng", "anitopy"):
+    for name in ("anitomy_ng", "anitopy", "aniparse"):
         results = python_engine(name)
         if results is None:
             skipped.append(name)

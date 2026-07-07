@@ -26,7 +26,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: touch refs.md # accumulates the exact reference versions compared against
 
-      # anitomy-ng (built from this checkout) + anitopy are in-process engines.
+      # anitomy-ng (built from this checkout) + anitopy + aniparse are in-process engines.
       - name: Build anitomy-ng extension
         working-directory: anitomy-py
         run: uv sync
@@ -96,7 +96,7 @@ jobs:
       - name: Run benchmark
         working-directory: anitomy-py
         run: |
-          uv run --with anitopy==2.1.1 python ../scripts/benchmark.py \
+          uv run --with anitopy==2.1.1 --with aniparse==2.0.0 python ../scripts/benchmark.py \
             --engines-config ../engines-config.json --out ../benchmark.md
 
       - name: Publish to run summary
