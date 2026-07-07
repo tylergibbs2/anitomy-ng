@@ -13,7 +13,7 @@
 //! `slice::get`/iterator adapters, which can't panic regardless of how the
 //! surrounding position arithmetic is edited later (see `tests/no_panic.rs`).
 
-use super::bracket::{is_close_bracket, is_open_bracket};
+use super::bracket::{is_close_bracket, is_open_bracket, matching_close};
 use super::delimiter::is_delimiter;
 use super::keyword::{self, Keyword};
 use super::token::{Token, TokenKind};
@@ -82,14 +82,25 @@ fn next_token(chars: &[char], pos: &mut usize) -> Option<Token> {
 }
 
 fn process_tokens(tokens: &mut [Token]) {
-    let mut bracket_level: i32 = 0;
+    // Enclosure is delimited by matching bracket pairs, not a nesting depth:
+    // once an opening bracket is seen, only its matching close ends the
+    // enclosed run. A stray or mismatched inner bracket (e.g. the second `[`
+    // in `[[Group] Title`, or a `(` inside `[...]`) is just content and does
+    // not open a new level, so an unbalanced run can't leave the rest of the
+    // filename permanently "enclosed" and swallow the title.
+    let mut expected_close: Option<char> = None;
     let mut position: usize = 0;
 
     for token in tokens.iter_mut() {
         match token.kind {
-            TokenKind::OpenBracket => bracket_level += 1,
-            TokenKind::CloseBracket => bracket_level -= 1,
-            _ => token.is_enclosed = bracket_level > 0,
+            TokenKind::OpenBracket if expected_close.is_none() => {
+                expected_close = token.value.chars().next().and_then(matching_close);
+            }
+            TokenKind::CloseBracket if expected_close == token.value.chars().next() => {
+                expected_close = None;
+            }
+            TokenKind::OpenBracket | TokenKind::CloseBracket => {}
+            _ => token.is_enclosed = expected_close.is_some(),
         }
 
         token.position = position;
