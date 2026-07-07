@@ -20,6 +20,10 @@ on:
         description: "Publish the anitomy-ng wasm package to npm"
         type: boolean
         default: true
+      nuget:
+        description: "Publish the AnitomyNg .NET package to NuGet.org"
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -30,6 +34,13 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/wheels.yml
+
+  # Reuses nuget.yml; its .nupkg artifact feeds publish-nuget below.
+  build-nuget:
+    if: ${{ inputs.nuget }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/nuget.yml
 
   publish-pypi:
     needs: build
@@ -96,3 +107,33 @@ jobs:
         # Tokenless: authenticates via GitHub OIDC against the trusted publisher
         # configured on npmjs.com, and attaches signed build provenance.
         run: npm publish --provenance --access public
+
+  publish-nuget:
+    needs: build-nuget
+    if: ${{ inputs.nuget }}
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://www.nuget.org/packages/AnitomyNg
+    permissions:
+      id-token: write # mint the OIDC token NuGet Trusted Publishing exchanges
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget
+          path: dist-nuget
+      # Tokenless: exchanges the GitHub OIDC token for a short-lived NuGet API
+      # key via the trusted-publishing policy configured on nuget.org. `user`
+      # is the nuget.org account that owns the policy (set the repo variable).
+      - uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - run: >
+          dotnet nuget push "dist-nuget/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

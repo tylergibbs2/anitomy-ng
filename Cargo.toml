@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["anitomy", "anitomy-py", "anitomy-js"]
+members = ["anitomy", "anitomy-py", "anitomy-js", "anitomy-c"]
 # Benchmark adapter for an external crate; its own workspace, built only by
 # .github/workflows/benchmark.yml (see scripts/adapters/).
 exclude = ["scripts/adapters/rapptz"]

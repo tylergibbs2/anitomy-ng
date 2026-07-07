@@ -1,0 +1,79 @@
+name: Build NuGet
+
+# Builds only — does not publish. Run standalone (workflow_dispatch) to smoke
+# -test the package build, or let release.yml call it (workflow_call) as the
+# build stage before its gated publish job. Cross-builds the C ABI (anitomy-c)
+# for every supported .NET RID, stages the natives into the package's
+# runtimes/<rid>/native layout, and produces the .nupkg.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  natives:
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, rid: linux-x64 }
+          - { os: ubuntu-latest, target: aarch64-unknown-linux-gnu, rid: linux-arm64, cross: true }
+          - { os: macos-latest, target: x86_64-apple-darwin, rid: osx-x64 }
+          - { os: macos-latest, target: aarch64-apple-darwin, rid: osx-arm64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, rid: win-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # Cross linker/runner for the Linux target that isn't the runner's arch.
+      - if: ${{ matrix.cross }}
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+      - run: cargo build -p anitomy-ng-c --release --target ${{ matrix.target }}
+      # Upload just the shared library (libanitomy.so / .dylib / anitomy.dll).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: |
+            target/${{ matrix.target }}/release/libanitomy.so
+            target/${{ matrix.target }}/release/libanitomy.dylib
+            target/${{ matrix.target }}/release/anitomy.dll
+          if-no-files-found: error
+
+  pack:
+    needs: natives
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/download-artifact@v4
+        with:
+          path: natives
+          pattern: native-*
+      - name: Stage natives into runtimes/<rid>/native
+        run: |
+          set -euo pipefail
+          for dir in natives/native-*; do
+            rid="${dir#natives/native-}"
+            dest="bindings/csharp/AnitomyNg/runtimes/${rid}/native"
+            mkdir -p "$dest"
+            cp "$dir"/* "$dest"/
+          done
+          echo "Staged runtimes:"; find bindings/csharp/AnitomyNg/runtimes -type f
+      - name: Resolve version from the workspace
+        id: ver
+        run: echo "version=$(grep -m1 '^version' Cargo.toml | sed 's/.*\"\(.*\)\".*/\1/')" >> "$GITHUB_OUTPUT"
+      - run: >
+          dotnet pack bindings/csharp/AnitomyNg/AnitomyNg.csproj -c Release
+          -p:Version=${{ steps.ver.outputs.version }} -o dist-nuget
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: dist-nuget/*.nupkg
+          if-no-files-found: error
