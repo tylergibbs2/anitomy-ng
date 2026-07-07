@@ -24,109 +24,66 @@
 
 use pyo3::prelude::*;
 
-/// Mirrors `anitomy_ng::Options`. Re-exported directly as
-/// `anitomy_ng.Options`, since it's a flat struct of bools.
-#[pyclass(get_all, set_all, from_py_object)]
-#[derive(Debug, Clone, Copy)]
-pub struct Options {
-    pub parse_episode: bool,
-    pub parse_episode_title: bool,
-    pub parse_file_checksum: bool,
-    pub parse_file_extension: bool,
-    pub parse_part: bool,
-    pub parse_release_group: bool,
-    pub parse_season: bool,
-    pub parse_title: bool,
-    pub parse_video_resolution: bool,
-    pub parse_year: bool,
-}
-
-#[pymethods]
-impl Options {
-    #[new]
-    #[pyo3(signature = (
-        *,
-        parse_episode = true,
-        parse_episode_title = true,
-        parse_file_checksum = true,
-        parse_file_extension = true,
-        parse_part = true,
-        parse_release_group = true,
-        parse_season = true,
-        parse_title = true,
-        parse_video_resolution = true,
-        parse_year = true,
-    ))]
-    #[allow(clippy::too_many_arguments)]
-    fn new(
-        parse_episode: bool,
-        parse_episode_title: bool,
-        parse_file_checksum: bool,
-        parse_file_extension: bool,
-        parse_part: bool,
-        parse_release_group: bool,
-        parse_season: bool,
-        parse_title: bool,
-        parse_video_resolution: bool,
-        parse_year: bool,
-    ) -> Self {
-        Options {
-            parse_episode,
-            parse_episode_title,
-            parse_file_checksum,
-            parse_file_extension,
-            parse_part,
-            parse_release_group,
-            parse_season,
-            parse_title,
-            parse_video_resolution,
-            parse_year,
+/// Declares the Python-facing [`Options`] pyclass — the struct, its keyword-only
+/// `__init__` (every field defaulting to `true`), `__repr__`, `Default`, and the
+/// round-trip conversions with `anitomy_ng::Options` — from a single field list,
+/// so none of those parallel copies can drift. Keep the list aligned with
+/// `anitomy_ng::Options`.
+macro_rules! options_bridge {
+    ($($field:ident),+ $(,)?) => {
+        /// Mirrors `anitomy_ng::Options`. Re-exported directly as
+        /// `anitomy_ng.Options`, since it's a flat struct of bools.
+        #[pyclass(get_all, set_all, from_py_object)]
+        #[derive(Debug, Clone, Copy)]
+        pub struct Options {
+            $(pub $field: bool),+
         }
-    }
 
-    fn __repr__(&self) -> String {
-        format!("{self:?}")
-    }
-}
+        #[pymethods]
+        impl Options {
+            #[new]
+            #[pyo3(signature = ( * $(, $field = true)+ ))]
+            #[allow(clippy::too_many_arguments)]
+            fn new($($field: bool),+) -> Self {
+                Options { $($field),+ }
+            }
 
-impl From<Options> for anitomy_ng::Options {
-    fn from(o: Options) -> Self {
-        anitomy_ng::Options {
-            parse_episode: o.parse_episode,
-            parse_episode_title: o.parse_episode_title,
-            parse_file_checksum: o.parse_file_checksum,
-            parse_file_extension: o.parse_file_extension,
-            parse_part: o.parse_part,
-            parse_release_group: o.parse_release_group,
-            parse_season: o.parse_season,
-            parse_title: o.parse_title,
-            parse_video_resolution: o.parse_video_resolution,
-            parse_year: o.parse_year,
+            fn __repr__(&self) -> String {
+                format!("{self:?}")
+            }
         }
-    }
-}
 
-impl Default for Options {
-    fn default() -> Self {
-        anitomy_ng::Options::default().into()
-    }
-}
-
-impl From<anitomy_ng::Options> for Options {
-    fn from(o: anitomy_ng::Options) -> Self {
-        Options {
-            parse_episode: o.parse_episode,
-            parse_episode_title: o.parse_episode_title,
-            parse_file_checksum: o.parse_file_checksum,
-            parse_file_extension: o.parse_file_extension,
-            parse_part: o.parse_part,
-            parse_release_group: o.parse_release_group,
-            parse_season: o.parse_season,
-            parse_title: o.parse_title,
-            parse_video_resolution: o.parse_video_resolution,
-            parse_year: o.parse_year,
+        impl From<Options> for anitomy_ng::Options {
+            fn from(o: Options) -> Self {
+                anitomy_ng::Options { $($field: o.$field),+ }
+            }
         }
-    }
+
+        impl Default for Options {
+            fn default() -> Self {
+                anitomy_ng::Options::default().into()
+            }
+        }
+
+        impl From<anitomy_ng::Options> for Options {
+            fn from(o: anitomy_ng::Options) -> Self {
+                Options { $($field: o.$field),+ }
+            }
+        }
+    };
+}
+
+options_bridge! {
+    parse_episode,
+    parse_episode_title,
+    parse_file_checksum,
+    parse_file_extension,
+    parse_part,
+    parse_release_group,
+    parse_season,
+    parse_title,
+    parse_video_resolution,
+    parse_year,
 }
 
 /// One parsed element, still in raw/untyped form (`kind` is the snake_case

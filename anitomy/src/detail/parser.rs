@@ -9,9 +9,9 @@
 //! `element_kind` of) their tokens — then sorts the collected elements by
 //! position.
 //!
-//! Each sub-parser is currently a stub returning nothing; fill them in one
-//! at a time (each is a fairly self-contained file, matching upstream) and
-//! watch `tests/conformance.rs`'s pass count climb.
+//! Each sub-parser lives in a fairly self-contained file matching an upstream
+//! header; `tests/conformance.rs` checks their combined output against the
+//! upstream and anitopy fixture suites.
 
 mod episode;
 mod episode_title;

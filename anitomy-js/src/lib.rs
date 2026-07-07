@@ -15,12 +15,33 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-/// The kind of a parsed [`Element`], serialized as the snake_case strings used
-/// across every anitomy-ng binding.
-#[derive(Serialize, Tsify)]
-#[tsify(into_wasm_abi)]
-#[serde(rename_all = "snake_case")]
-pub enum ElementKind {
+/// Declares the wasm-facing [`ElementKind`] mirror and its `From` conversion
+/// off the core enum from a single variant list. `#[serde(rename_all)]` handles
+/// the snake_case strings, so the variants only need naming once; keep the list
+/// aligned with `anitomy_ng::ElementKind`.
+macro_rules! element_kind_bridge {
+    ($($variant:ident),+ $(,)?) => {
+        /// The kind of a parsed [`Element`], serialized as the snake_case
+        /// strings used across every anitomy-ng binding.
+        #[derive(Serialize, Tsify)]
+        #[tsify(into_wasm_abi)]
+        #[serde(rename_all = "snake_case")]
+        pub enum ElementKind {
+            $($variant),+
+        }
+
+        impl From<anitomy_ng::ElementKind> for ElementKind {
+            fn from(kind: anitomy_ng::ElementKind) -> Self {
+                use anitomy_ng::ElementKind as K;
+                match kind {
+                    $(K::$variant => Self::$variant),+
+                }
+            }
+        }
+    };
+}
+
+element_kind_bridge! {
     AudioTerm,
     Device,
     Episode,
@@ -44,35 +65,6 @@ pub enum ElementKind {
     Year,
 }
 
-impl From<anitomy_ng::ElementKind> for ElementKind {
-    fn from(kind: anitomy_ng::ElementKind) -> Self {
-        use anitomy_ng::ElementKind as K;
-        match kind {
-            K::AudioTerm => Self::AudioTerm,
-            K::Device => Self::Device,
-            K::Episode => Self::Episode,
-            K::EpisodeTitle => Self::EpisodeTitle,
-            K::FileChecksum => Self::FileChecksum,
-            K::FileExtension => Self::FileExtension,
-            K::Language => Self::Language,
-            K::Other => Self::Other,
-            K::Part => Self::Part,
-            K::ReleaseGroup => Self::ReleaseGroup,
-            K::ReleaseInformation => Self::ReleaseInformation,
-            K::ReleaseVersion => Self::ReleaseVersion,
-            K::Season => Self::Season,
-            K::Source => Self::Source,
-            K::Subtitles => Self::Subtitles,
-            K::Title => Self::Title,
-            K::Type => Self::Type,
-            K::VideoResolution => Self::VideoResolution,
-            K::VideoTerm => Self::VideoTerm,
-            K::Volume => Self::Volume,
-            K::Year => Self::Year,
-        }
-    }
-}
-
 /// One parsed element: its [`ElementKind`], the matched substring, and the
 /// element's codepoint position in the input.
 #[derive(Serialize, Tsify)]
@@ -83,64 +75,54 @@ pub struct Element {
     pub position: usize,
 }
 
-/// Which element kinds to extract. Every field defaults to `true`; pass a
-/// partial object to disable specific kinds, e.g. `{ parse_title: false }`.
-#[derive(Deserialize, Tsify)]
-#[tsify(from_wasm_abi)]
-#[serde(default)]
-pub struct Options {
-    pub parse_episode: bool,
-    pub parse_episode_title: bool,
-    pub parse_file_checksum: bool,
-    pub parse_file_extension: bool,
-    pub parse_part: bool,
-    pub parse_release_group: bool,
-    pub parse_season: bool,
-    pub parse_title: bool,
-    pub parse_video_resolution: bool,
-    pub parse_year: bool,
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        // Same defaults as the core crate (all enabled). `#[serde(default)]`
-        // above uses this to fill any fields omitted by the caller.
-        CoreOptions::default().into()
-    }
-}
-
-impl From<CoreOptions> for Options {
-    fn from(o: CoreOptions) -> Self {
-        Self {
-            parse_episode: o.parse_episode,
-            parse_episode_title: o.parse_episode_title,
-            parse_file_checksum: o.parse_file_checksum,
-            parse_file_extension: o.parse_file_extension,
-            parse_part: o.parse_part,
-            parse_release_group: o.parse_release_group,
-            parse_season: o.parse_season,
-            parse_title: o.parse_title,
-            parse_video_resolution: o.parse_video_resolution,
-            parse_year: o.parse_year,
+/// Declares the wasm-facing [`Options`] mirror and its round-trip conversions
+/// with `CoreOptions` from a single field list, so the struct, `Default`, and
+/// both `From` impls can't drift apart. Keep the list aligned with
+/// `anitomy_ng::Options`.
+macro_rules! options_bridge {
+    ($($field:ident),+ $(,)?) => {
+        /// Which element kinds to extract. Every field defaults to `true`; pass
+        /// a partial object to disable specific kinds, e.g. `{ parse_title: false }`.
+        #[derive(Deserialize, Tsify)]
+        #[tsify(from_wasm_abi)]
+        #[serde(default)]
+        pub struct Options {
+            $(pub $field: bool),+
         }
-    }
+
+        impl Default for Options {
+            fn default() -> Self {
+                // Same defaults as the core crate (all enabled). `#[serde(default)]`
+                // above uses this to fill any fields omitted by the caller.
+                CoreOptions::default().into()
+            }
+        }
+
+        impl From<CoreOptions> for Options {
+            fn from(o: CoreOptions) -> Self {
+                Self { $($field: o.$field),+ }
+            }
+        }
+
+        impl From<Options> for CoreOptions {
+            fn from(o: Options) -> Self {
+                CoreOptions { $($field: o.$field),+ }
+            }
+        }
+    };
 }
 
-impl From<Options> for CoreOptions {
-    fn from(o: Options) -> Self {
-        CoreOptions {
-            parse_episode: o.parse_episode,
-            parse_episode_title: o.parse_episode_title,
-            parse_file_checksum: o.parse_file_checksum,
-            parse_file_extension: o.parse_file_extension,
-            parse_part: o.parse_part,
-            parse_release_group: o.parse_release_group,
-            parse_season: o.parse_season,
-            parse_title: o.parse_title,
-            parse_video_resolution: o.parse_video_resolution,
-            parse_year: o.parse_year,
-        }
-    }
+options_bridge! {
+    parse_episode,
+    parse_episode_title,
+    parse_file_checksum,
+    parse_file_extension,
+    parse_part,
+    parse_release_group,
+    parse_season,
+    parse_title,
+    parse_video_resolution,
+    parse_year,
 }
 
 // Give the return value a precise TS type (`Element[]`) instead of `any`, while

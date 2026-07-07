@@ -61,10 +61,10 @@ struct EpisodeTokenMatch {
 /// `(?:S(\d{1,2})|(\d{1,2})x)?[E#]?(\d{1,4})(?:[vV](\d))?`, full match.
 fn episode_token_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)] // fixed literal pattern, see video_resolution.rs
     RE.get_or_init(|| {
-        Regex::new(r"^(?:S([0-9]{1,2})|([0-9]{1,2})x)?[E#]?([0-9]{1,4})(?:[vV]([0-9]))?$")
-            .expect("valid regex")
+        crate::detail::regex_util::compile(
+            r"^(?:S([0-9]{1,2})|([0-9]{1,2})x)?[E#]?([0-9]{1,4})(?:[vV]([0-9]))?$",
+        )
     })
 }
 
@@ -80,8 +80,9 @@ fn match_episode_token(value: &str) -> Option<EpisodeTokenMatch> {
         })
     };
 
-    #[allow(clippy::expect_used)] // group 3 (episode) is mandatory in the pattern
-    let episode = group(3).expect("group 3 always matches");
+    // Group 3 (episode) is mandatory in the pattern, so it always participates
+    // when the overall regex matches; `?` is a panic-free formality.
+    let episode = group(3)?;
 
     Some(EpisodeTokenMatch {
         season_s: group(1),
@@ -316,8 +317,7 @@ fn parse_fractional_episode(tokens: &mut [Token], elements: &mut Vec<Element>) -
 /// `(?:第)?(\d{1,4})話`, full match.
 fn japanese_episode_counter_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)]
-    RE.get_or_init(|| Regex::new(r"^(?:第)?([0-9]{1,4})話$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^(?:第)?([0-9]{1,4})話$"))
 }
 
 fn parse_japanese_counter(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool {
@@ -331,8 +331,11 @@ fn parse_japanese_counter(tokens: &mut [Token], elements: &mut Vec<Element>) -> 
         let Some(caps) = japanese_episode_counter_pattern().captures(&value) else {
             continue;
         };
-        #[allow(clippy::expect_used)] // group 1 is mandatory in the pattern
-        let group1 = caps.get(1).expect("group 1 always matches");
+        // Group 1 is mandatory in the pattern; `else continue` is unreachable
+        // in practice but keeps this panic-free without an `expect`.
+        let Some(group1) = caps.get(1) else {
+            continue;
+        };
         let offset = byte_to_char_offset(&value, group1.start());
         let group1 = group1.as_str().to_string();
         let position = tokens.get(idx).map_or(0, |t| t.position);
@@ -461,8 +464,7 @@ fn parse_isolated_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> b
 /// `\d{1,4}[ABCabc]`, full match.
 fn is_partial_episode(value: &str) -> bool {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)] // fixed literal pattern, see video_resolution.rs
-    RE.get_or_init(|| Regex::new(r"^[0-9]{1,4}[ABCabc]$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^[0-9]{1,4}[ABCabc]$"))
         .is_match(value)
 }
 

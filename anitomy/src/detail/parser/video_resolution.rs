@@ -15,12 +15,8 @@ use crate::element::{Element, ElementKind};
 /// resolution can be in `1080p` or `1920x1080` format.
 fn pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    // Pattern is a fixed literal (not derived from input), so this can only
-    // ever fail at compile-adjacent development time, not on real input —
-    // `tests/no_panic.rs` would catch it immediately either way.
-    #[allow(clippy::expect_used)]
     RE.get_or_init(|| {
-        Regex::new(r"^[0-9]{3,4}(?:[ipP]|[xX\u{00D7}][0-9]{3,4}[ipP]?)$").expect("valid regex")
+        crate::detail::regex_util::compile(r"^[0-9]{3,4}(?:[ipP]|[xX\u{00D7}][0-9]{3,4}[ipP]?)$")
     })
 }
 

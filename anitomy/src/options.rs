@@ -4,33 +4,35 @@
 
 //! Port of `include/anitomy/options.hpp`.
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Options {
-    pub parse_episode: bool,
-    pub parse_episode_title: bool,
-    pub parse_file_checksum: bool,
-    pub parse_file_extension: bool,
-    pub parse_part: bool,
-    pub parse_release_group: bool,
-    pub parse_season: bool,
-    pub parse_title: bool,
-    pub parse_video_resolution: bool,
-    pub parse_year: bool,
+/// Declares [`Options`] and its `Default` from one field list, so the fields
+/// and their (all-`true`) defaults can't fall out of sync. The bindings
+/// (`anitomy-py`, `anitomy-js`) mirror this same field list; keep them aligned.
+macro_rules! options {
+    ($($field:ident),+ $(,)?) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub struct Options {
+            $(pub $field: bool),+
+        }
+
+        impl Default for Options {
+            fn default() -> Self {
+                Options {
+                    $($field: true),+
+                }
+            }
+        }
+    };
 }
 
-impl Default for Options {
-    fn default() -> Self {
-        Options {
-            parse_episode: true,
-            parse_episode_title: true,
-            parse_file_checksum: true,
-            parse_file_extension: true,
-            parse_part: true,
-            parse_release_group: true,
-            parse_season: true,
-            parse_title: true,
-            parse_video_resolution: true,
-            parse_year: true,
-        }
-    }
+options! {
+    parse_episode,
+    parse_episode_title,
+    parse_file_checksum,
+    parse_file_extension,
+    parse_part,
+    parse_release_group,
+    parse_season,
+    parse_title,
+    parse_video_resolution,
+    parse_year,
 }

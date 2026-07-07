@@ -11,6 +11,7 @@ pub(crate) mod delimiter;
 pub(crate) mod element;
 pub(crate) mod keyword;
 pub(crate) mod parser;
+pub(crate) mod regex_util;
 pub(crate) mod token;
 pub(crate) mod tokenizer;
 pub(crate) mod util;

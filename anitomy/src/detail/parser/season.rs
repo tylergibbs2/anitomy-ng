@@ -27,15 +27,13 @@ fn is_season_keyword(token: &Token) -> bool {
 /// `S(\d{1,2})`, full match, case-sensitive (only capital `S`).
 fn s_prefixed_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)] // fixed literal pattern, see video_resolution.rs
-    RE.get_or_init(|| Regex::new(r"^S([0-9]{1,2})$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^S([0-9]{1,2})$"))
 }
 
 /// `(?:第)?(\d{1,2})期`, full match.
 fn japanese_counter_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)]
-    RE.get_or_init(|| Regex::new(r"^(?:第)?([0-9]{1,2})期$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^(?:第)?([0-9]{1,2})期$"))
 }
 
 pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
@@ -109,8 +107,11 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
         let Some(caps) = s_prefixed_pattern().captures(&value) else {
             continue;
         };
-        #[allow(clippy::expect_used)] // group 1 is mandatory in the pattern
-        let group1 = caps.get(1).expect("group 1 always matches");
+        // Group 1 is mandatory in the pattern; `else continue` is unreachable
+        // in practice but keeps this panic-free without an `expect`.
+        let Some(group1) = caps.get(1) else {
+            continue;
+        };
         let group1_offset = byte_to_char_offset(&value, group1.start());
         let group1 = group1.as_str().to_string();
         let position = tokens.get(idx).map_or(0, |t| t.position);
@@ -160,8 +161,11 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             let Some(caps) = japanese_counter_pattern().captures(&value) else {
                 continue;
             };
-            #[allow(clippy::expect_used)] // group 1 is mandatory in the pattern
-            let group1 = caps.get(1).expect("group 1 always matches");
+            // Group 1 is mandatory in the pattern; `else continue` is
+            // unreachable in practice but keeps this panic-free without an `expect`.
+            let Some(group1) = caps.get(1) else {
+                continue;
+            };
             let offset = byte_to_char_offset(&value, group1.start());
             let group1 = group1.as_str().to_string();
             let position = tokens.get(idx).map_or(0, |t| t.position);

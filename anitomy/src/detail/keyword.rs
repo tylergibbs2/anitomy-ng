@@ -10,7 +10,7 @@
 //! `KeywordEqual`, which only fold `A`-`Z`): keys are stored lowercased and
 //! queries are lowercased before lookup.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -422,10 +422,31 @@ pub(crate) fn get(word: &str) -> Option<Keyword> {
     keywords().get(&word.to_ascii_lowercase()).copied()
 }
 
+/// Every (lowercased) prefix of every known keyword, including the empty
+/// string and each full key. Lets [`has_prefix`] answer in a single hash
+/// lookup instead of scanning the whole keyword table on each call — the
+/// tokenizer queries it once per character while growing a candidate keyword.
+fn prefixes() -> &'static HashSet<String> {
+    static PREFIXES: OnceLock<HashSet<String>> = OnceLock::new();
+    PREFIXES.get_or_init(|| {
+        let mut set = HashSet::new();
+        for key in keywords().keys() {
+            // Keys are already lowercased (see `build_map`); accumulate chars
+            // so multi-byte prefixes land on char boundaries.
+            let mut prefix = String::new();
+            set.insert(prefix.clone());
+            for ch in key.chars() {
+                prefix.push(ch);
+                set.insert(prefix.clone());
+            }
+        }
+        set
+    })
+}
+
 /// Whether any known keyword starts with `prefix` (case-insensitive). Used
 /// by the tokenizer to find the longest valid keyword at a given position
 /// without scanning the whole table character-by-character from scratch.
 pub(crate) fn has_prefix(prefix: &str) -> bool {
-    let prefix = prefix.to_ascii_lowercase();
-    keywords().keys().any(|k| k.starts_with(&prefix))
+    prefixes().contains(&prefix.to_ascii_lowercase())
 }

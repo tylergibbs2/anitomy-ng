@@ -35,8 +35,7 @@ fn matching_ampersand_volume(tokens: &[Token], first_idx: usize) -> Option<usize
 /// `(\d{1,4})(?:[vV](\d))?`, full match.
 fn single_volume_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)] // fixed literal pattern, see video_resolution.rs
-    RE.get_or_init(|| Regex::new(r"^([0-9]{1,4})(?:[vV]([0-9]))?$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^([0-9]{1,4})(?:[vV]([0-9]))?$"))
 }
 
 /// `(\d{1,4})&(\d{1,4})`, full match against a single token's value.
@@ -47,8 +46,7 @@ fn single_volume_pattern() -> &'static Regex {
 /// `Vol.1&2` as a token window instead.
 fn multiple_volumes_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)]
-    RE.get_or_init(|| Regex::new(r"^([0-9]{1,4})&([0-9]{1,4})$").expect("valid regex"))
+    RE.get_or_init(|| crate::detail::regex_util::compile(r"^([0-9]{1,4})&([0-9]{1,4})$"))
 }
 
 pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
@@ -72,16 +70,19 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
         let value = token.value.clone();
         let position = token.position;
 
+        // Groups below are all mandatory in their patterns, so `if let Some`
+        // always binds when the regex matched; it keeps this panic-free
+        // (no `expect`) without altering the loop's `search_from` advance.
         if let Some(caps) = single_volume_pattern().captures(&value) {
             mark(tokens, volume_idx, ElementKind::Volume);
             mark(tokens, token_idx, ElementKind::Volume);
-            #[allow(clippy::expect_used)] // group 1 is mandatory in the pattern
-            let number = caps.get(1).expect("group 1 always matches");
-            elements.push(Element {
-                kind: ElementKind::Volume,
-                value: number.as_str().to_string(),
-                position,
-            });
+            if let Some(number) = caps.get(1) {
+                elements.push(Element {
+                    kind: ElementKind::Volume,
+                    value: number.as_str().to_string(),
+                    position,
+                });
+            }
             if let Some(version) = caps.get(2) {
                 elements.push(Element {
                     kind: ElementKind::ReleaseVersion,
@@ -89,42 +90,30 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
                     position: position + byte_to_char_offset(&value, version.start()),
                 });
             } else if let Some(second_idx) = matching_ampersand_volume(tokens, token_idx) {
-                #[allow(clippy::expect_used)]
-                let second = tokens
-                    .get(second_idx)
-                    .expect("checked by matching_ampersand_volume");
-                elements.push(Element {
-                    kind: ElementKind::Volume,
-                    value: second.value.clone(),
-                    position,
-                });
-                mark(tokens, second_idx, ElementKind::Volume);
+                if let Some(second) = tokens.get(second_idx) {
+                    elements.push(Element {
+                        kind: ElementKind::Volume,
+                        value: second.value.clone(),
+                        position,
+                    });
+                    mark(tokens, second_idx, ElementKind::Volume);
+                }
             }
         } else if let Some(caps) = multiple_volumes_pattern().captures(&value) {
             mark(tokens, volume_idx, ElementKind::Volume);
             mark(tokens, token_idx, ElementKind::Volume);
-            #[allow(clippy::expect_used)]
-            let first = caps
-                .get(1)
-                .expect("group 1 always matches")
-                .as_str()
-                .to_string();
-            #[allow(clippy::expect_used)]
-            let second = caps
-                .get(2)
-                .expect("group 2 always matches")
-                .as_str()
-                .to_string();
-            elements.push(Element {
-                kind: ElementKind::Volume,
-                value: first,
-                position,
-            });
-            elements.push(Element {
-                kind: ElementKind::Volume,
-                value: second,
-                position,
-            });
+            if let (Some(first), Some(second)) = (caps.get(1), caps.get(2)) {
+                elements.push(Element {
+                    kind: ElementKind::Volume,
+                    value: first.as_str().to_string(),
+                    position,
+                });
+                elements.push(Element {
+                    kind: ElementKind::Volume,
+                    value: second.as_str().to_string(),
+                    position,
+                });
+            }
         }
 
         search_from = volume_idx + 1;

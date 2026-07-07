@@ -24,7 +24,9 @@ pub(super) fn parse_file_extension(tokens: &mut [Token]) -> Option<Element> {
 
     let is_extension = tokens.get(len - 1).is_some_and(|t| {
         matches!(t.kind, TokenKind::Keyword | TokenKind::Text)
-            && EXTENSIONS.contains(&t.value.as_str())
+            // Extensions are case-insensitive (`.MKV` is as valid as `.mkv`);
+            // `EXTENSIONS` is stored lowercase, so fold the token before comparing.
+            && EXTENSIONS.contains(&t.value.to_ascii_lowercase().as_str())
     });
     let is_dot = tokens
         .get(len - 2)

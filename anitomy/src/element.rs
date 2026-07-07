@@ -11,57 +11,61 @@
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ElementKind {
-    AudioTerm,
-    Device,
-    Episode,
-    EpisodeTitle,
-    FileChecksum,
-    FileExtension,
-    Language,
-    Other,
-    Part,
-    ReleaseGroup,
-    ReleaseInformation,
-    ReleaseVersion,
-    Season,
-    Source,
-    Subtitles,
-    Title,
-    Type,
-    VideoResolution,
-    VideoTerm,
-    Volume,
-    Year,
+/// Declares [`ElementKind`] and its string mapping from a single list, so
+/// `as_str` and `FromStr` are always exact inverses — adding a variant here
+/// updates both directions (and `Display`) at once, with no parallel tables to
+/// drift. The strings are the snake_case names upstream and the fixture suites
+/// key on; keep them in sync with upstream if it changes.
+macro_rules! element_kinds {
+    ($($variant:ident => $name:literal),+ $(,)?) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum ElementKind {
+            $($variant),+
+        }
+
+        impl ElementKind {
+            pub fn as_str(self) -> &'static str {
+                match self {
+                    $(ElementKind::$variant => $name),+
+                }
+            }
+        }
+
+        impl FromStr for ElementKind {
+            type Err = ParseElementKindError;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Ok(match s {
+                    $($name => ElementKind::$variant,)+
+                    _ => return Err(ParseElementKindError),
+                })
+            }
+        }
+    };
 }
 
-impl ElementKind {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            ElementKind::AudioTerm => "audio_term",
-            ElementKind::Device => "device",
-            ElementKind::Episode => "episode",
-            ElementKind::EpisodeTitle => "episode_title",
-            ElementKind::FileChecksum => "file_checksum",
-            ElementKind::FileExtension => "file_extension",
-            ElementKind::Language => "language",
-            ElementKind::Other => "other",
-            ElementKind::Part => "part",
-            ElementKind::ReleaseGroup => "release_group",
-            ElementKind::ReleaseInformation => "release_information",
-            ElementKind::ReleaseVersion => "release_version",
-            ElementKind::Season => "season",
-            ElementKind::Source => "source",
-            ElementKind::Subtitles => "subtitles",
-            ElementKind::Title => "title",
-            ElementKind::Type => "type",
-            ElementKind::VideoResolution => "video_resolution",
-            ElementKind::VideoTerm => "video_term",
-            ElementKind::Volume => "volume",
-            ElementKind::Year => "year",
-        }
-    }
+element_kinds! {
+    AudioTerm => "audio_term",
+    Device => "device",
+    Episode => "episode",
+    EpisodeTitle => "episode_title",
+    FileChecksum => "file_checksum",
+    FileExtension => "file_extension",
+    Language => "language",
+    Other => "other",
+    Part => "part",
+    ReleaseGroup => "release_group",
+    ReleaseInformation => "release_information",
+    ReleaseVersion => "release_version",
+    Season => "season",
+    Source => "source",
+    Subtitles => "subtitles",
+    Title => "title",
+    Type => "type",
+    VideoResolution => "video_resolution",
+    VideoTerm => "video_term",
+    Volume => "volume",
+    Year => "year",
 }
 
 impl fmt::Display for ElementKind {
@@ -81,37 +85,6 @@ impl fmt::Display for ParseElementKindError {
 }
 
 impl std::error::Error for ParseElementKindError {}
-
-impl FromStr for ElementKind {
-    type Err = ParseElementKindError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "audio_term" => ElementKind::AudioTerm,
-            "device" => ElementKind::Device,
-            "episode" => ElementKind::Episode,
-            "episode_title" => ElementKind::EpisodeTitle,
-            "file_checksum" => ElementKind::FileChecksum,
-            "file_extension" => ElementKind::FileExtension,
-            "language" => ElementKind::Language,
-            "other" => ElementKind::Other,
-            "part" => ElementKind::Part,
-            "release_group" => ElementKind::ReleaseGroup,
-            "release_information" => ElementKind::ReleaseInformation,
-            "release_version" => ElementKind::ReleaseVersion,
-            "season" => ElementKind::Season,
-            "source" => ElementKind::Source,
-            "subtitles" => ElementKind::Subtitles,
-            "title" => ElementKind::Title,
-            "type" => ElementKind::Type,
-            "video_resolution" => ElementKind::VideoResolution,
-            "video_term" => ElementKind::VideoTerm,
-            "volume" => ElementKind::Volume,
-            "year" => ElementKind::Year,
-            _ => return Err(ParseElementKindError),
-        })
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
