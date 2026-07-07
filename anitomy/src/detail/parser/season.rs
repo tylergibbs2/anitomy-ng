@@ -83,6 +83,26 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
                             value,
                             position,
                         });
+                        // Range like `Season 4-6`: capture the endpoint too
+                        // (mirroring `S01-02`), so the trailing number isn't
+                        // left for the episode parser to claim as an episode.
+                        if is_numeric
+                            && tokens.get(i + 3).is_some_and(is_dash_token)
+                            && tokens
+                                .get(i + 4)
+                                .is_some_and(|t| is_free_token(t) && is_numeric_token(t))
+                        {
+                            if let Some((v2, p2)) =
+                                tokens.get(i + 4).map(|t| (t.value.clone(), t.position))
+                            {
+                                mark(tokens, i + 4, ElementKind::Season);
+                                elements.push(Element {
+                                    kind: ElementKind::Season,
+                                    value: v2,
+                                    position: p2,
+                                });
+                            }
+                        }
                         break;
                     }
                 }

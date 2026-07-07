@@ -204,5 +204,16 @@
       "subtitles": "Multi-Subs",
       "release_information": "Batch"
     }
+  },
+  {
+    "input": "[HuangSubs] Martial Universe Season 4-6 (1080p) | (武动乾坤, Wu Dong Qiankun)",
+    "source": "nyaa.si",
+    "note": "`Season 4-6` season range. detail/parser/season.rs's `Season N` branch now captures a trailing `-M` endpoint too (mirroring the existing `S01-02` handling), so both range ends become season values and the trailing number isn't left for the episode parser.",
+    "output": {
+      "release_group": "HuangSubs",
+      "title": "Martial Universe",
+      "season": ["4", "6"],
+      "video_resolution": "1080p"
+    }
   }
 ]
