@@ -241,20 +241,6 @@
     "mal_id": 3785
   },
   {
-    "input": "Evangelion The New Movie Q (BD 1280x720 AVC AACx2 [5.1+2.0]).mp4",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Evangelion The New Movie Q",
-      "type": "Movie",
-      "audio_term": "AACx2",
-      "file_extension": "mp4",
-      "source": "BD",
-      "video_resolution": "1280x720",
-      "video_term": "AVC"
-    },
-    "mal_id": 3785
-  },
-  {
     "input": "Evangelion_1.0_You_Are_[Not]_Alone_(1080p)_[@Home]",
     "source": "anitomy-master",
     "output": {
@@ -510,19 +496,6 @@
     "mal_id": 5680
   },
   {
-    "input": "Kotonoha no Niwa (BD 1280x720 AVC AACx3 [5.1+2.0+2.0] Subx3).mp4",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Kotonoha no Niwa",
-      "audio_term": "AACx3",
-      "file_extension": "mp4",
-      "source": "BD",
-      "video_resolution": "1280x720",
-      "video_term": "AVC"
-    },
-    "mal_id": 16782
-  },
-  {
     "input": "Macross Frontier - Sayonara no Tsubasa (Central Anime, 720p) [46B35E25].mkv",
     "source": "anitomy-master",
     "output": {
@@ -589,19 +562,6 @@
       "video_term": "x264"
     },
     "mal_id": 3927
-  },
-  {
-    "input": "Neko no Ongaeshi - [HQR.remux-DualAudio][NTV.1280x692.h264](0CDC2145).mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Neko no Ongaeshi",
-      "audio_term": "DualAudio",
-      "file_checksum": "0CDC2145",
-      "file_extension": "mkv",
-      "video_resolution": "1280x692",
-      "video_term": "h264"
-    },
-    "mal_id": 597
   },
   {
     "input": "Noein_[01_of_24]_[ru_jp]_[bodlerov_&_torrents_ru].mkv",
@@ -712,36 +672,6 @@
     }
   },
   {
-    "input": "[0x539] Somali and the Forest Spirit - S01E01 (WEB 1080p Hi10P AAC) [BB7C6531].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "season": "01",
-      "title": "Somali and the Forest Spirit",
-      "audio_term": "AAC",
-      "episode": "01",
-      "file_checksum": "BB7C6531",
-      "release_group": "0x539",
-      "video_resolution": "1080p",
-      "video_term": "Hi10P",
-      "file_extension": "mkv"
-    }
-  },
-  {
-    "input": "[52wy][SlamDunk][001][Jpn_Chs_Cht][x264_aac][DVDRip][7FE2C873].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "SlamDunk",
-      "audio_term": "aac",
-      "episode": "001",
-      "file_checksum": "7FE2C873",
-      "file_extension": "mkv",
-      "release_group": "52wy",
-      "source": "DVDRip",
-      "video_term": "x264"
-    },
-    "mal_id": 170
-  },
-  {
     "input": "[5F] RWBY 14 Forever Fall Part 2 pt-BR.mp4",
     "source": "anitomy-master",
     "output": {
@@ -843,19 +773,6 @@
     "output": {}
   },
   {
-    "input": "[AnimeRG] Ushio to Tora (TV) - 02 [720p] [Xcelent].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Ushio to Tora (TV)",
-      "type": "TV",
-      "episode": "02",
-      "file_extension": "mkv",
-      "release_group": "AnimeRG",
-      "video_resolution": "720p"
-    },
-    "mal_id": 29854
-  },
-  {
     "input": "[AoJiaoZero][Mangaka-san to Assistant-san to the Animation] 02 [BIG][X264_AAC][720P].mp4",
     "source": "anitomy-master",
     "output": {
@@ -868,18 +785,6 @@
       "video_term": "X264"
     },
     "mal_id": 21863
-  },
-  {
-    "input": "[Asenshi] Rozen Maiden 3 - PV [CA57F300].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Rozen Maiden 3",
-      "type": "PV",
-      "file_checksum": "CA57F300",
-      "file_extension": "mkv",
-      "release_group": "Asenshi"
-    },
-    "mal_id": 18041
   },
   {
     "input": "[Ayako]_Infinite_Stratos_-_IS_-_01v2_[XVID][400p][29675B71].avi",
@@ -895,34 +800,6 @@
       "video_term": "XVID"
     },
     "mal_id": 9041
-  },
-  {
-    "input": "[Ayu]_Kiddy_Grade_2_-_Pilot_[H264_AC3][650B731B].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Kiddy Grade 2",
-      "audio_term": "AC3",
-      "episode_title": "Pilot",
-      "file_checksum": "650B731B",
-      "file_extension": "mkv",
-      "release_group": "Ayu",
-      "video_term": "H264"
-    }
-  },
-  {
-    "input": "[B-G_&_m.3.3.w]_Myself_Yourself_12.DVD(H.264_DD2.0)_[CB2B37F1].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Myself Yourself",
-      "audio_term": "DD2.0",
-      "episode": "12",
-      "file_checksum": "CB2B37F1",
-      "file_extension": "mkv",
-      "release_group": "B-G_&_m.3.3.w",
-      "source": "DVD",
-      "video_term": "H.264"
-    },
-    "mal_id": 2926
   },
   {
     "input": "[BM&T] Toradora! - 07v2 - Pool Opening [720p Hi10 ] [BD] [8F59F2BA]",
@@ -964,25 +841,6 @@
       "source": "DVD"
     },
     "mal_id": 1051
-  },
-  {
-    "input": "[CH] Sword Art Online Extra Edition Dual Audio [BD 480p][10bitH.264+Vorbis]",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Sword Art Online Extra Edition",
-      "audio_term": [
-        "Dual Audio",
-        "Vorbis"
-      ],
-      "release_group": "CH",
-      "source": "BD",
-      "video_resolution": "480p",
-      "video_term": [
-        "H.264",
-        "10bit"
-      ]
-    },
-    "mal_id": 20021
   },
   {
     "input": "[CMS] Magical☆Star Kanon 100% OVA[DVD][E9F43685].mkv",
@@ -1112,21 +970,6 @@
       "video_term": "XVID"
     },
     "mal_id": 6758
-  },
-  {
-    "input": "[Deep] Tegami Bachi (REVERSE) - Letter Bee - 29 (04) [5203142B].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Tegami Bachi (REVERSE) - Letter Bee",
-      "episode": [
-        "04",
-        "29"
-      ],
-      "file_checksum": "5203142B",
-      "file_extension": "mkv",
-      "release_group": "Deep"
-    },
-    "mal_id": 8311
   },
   {
     "input": "[DmonHiro] Magi - The Labyrinth Of Magic - Vol.1v2 (BD, 720p)",
@@ -1276,22 +1119,6 @@
       "video_resolution": "720p"
     },
     "mal_id": 10196
-  },
-  {
-    "input": "[FB] Crayon Shin-Chan Movie 2 The Secret of Buri Buri Kingdom [DivX5 AC3] 1994 [852X480] V2.avi",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Crayon Shin-Chan Movie 2 The Secret of Buri Buri Kingdom",
-      "type": "Movie",
-      "year": "1994",
-      "audio_term": "AC3",
-      "file_extension": "avi",
-      "release_group": "FB",
-      "release_version": "2",
-      "video_resolution": "852X480",
-      "video_term": "DivX5"
-    },
-    "mal_id": 3745
   },
   {
     "input": "[FFF] Futsuu no Joshikousei ga [Locodol] Yatte Mita. - 01 [BAD09C76].mkv",
@@ -1499,25 +1326,6 @@
       "video_resolution": "1280x720"
     },
     "mal_id": 22777
-  },
-  {
-    "input": "[Hien] Kotoura-san - Special Short Anime 'Haruka's Room' - 01 [BD 1080p H.264 10-bit AAC][6B6BE015].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Kotoura-san - Special Short Anime 'Haruka's Room'",
-      "audio_term": "AAC",
-      "episode": "01",
-      "file_checksum": "6B6BE015",
-      "file_extension": "mkv",
-      "release_group": "Hien",
-      "source": "BD",
-      "video_resolution": "1080p",
-      "video_term": [
-        "H.264",
-        "10-bit"
-      ]
-    },
-    "mal_id": 16636
   },
   {
     "input": "[Himatsubushi]_Sora_no_Woto_-_01_-_H264_-_720p_-_E83AD672.mkv",
@@ -1765,25 +1573,6 @@
     "mal_id": 15061
   },
   {
-    "input": "[Mobile Suit Gundam Seed Destiny HD REMASTER][07][Big5][720p][AVC_AAC][encoded by SEED].mp4",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Mobile Suit Gundam Seed Destiny",
-      "audio_term": "AAC",
-      "episode": "07",
-      "file_extension": "mp4",
-      "other": "REMASTER",
-      "subtitles": "Big5",
-      "release_group": "SEED",
-      "video_resolution": "720p",
-      "video_term": [
-        "HD",
-        "AVC"
-      ]
-    },
-    "mal_id": 94
-  },
-  {
     "input": "[N LogN Fansubs] Angel Beats (9).mkv",
     "source": "anitomy-master",
     "output": {
@@ -1823,20 +1612,6 @@
       "video_term": "Hi10P"
     },
     "mal_id": 9941
-  },
-  {
-    "input": "[Nishi-Taku] Tamayura ~graduation photo~ Movie Part 1 [BD][720p][98965607].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Tamayura ~graduation photo~ Movie Part 1",
-      "type": "Movie",
-      "file_checksum": "98965607",
-      "file_extension": "mkv",
-      "release_group": "Nishi-Taku",
-      "source": "BD",
-      "video_resolution": "720p"
-    },
-    "mal_id": 25729
   },
   {
     "input": "[Nubles] Space Battleship Yamato 2199 (2012) episode 18 (720p 10 bit AAC)[1F56D642]",
@@ -1908,23 +1683,6 @@
       "video_term": "x264"
     },
     "mal_id": 222
-  },
-  {
-    "input": "[Raizel] Persona 4 The Animation Episode 13 - A Stormy Summer Vacation Part 1  [BD_1080p_Dual_Audio_FLAC_Hi10p][8A45634B].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Persona 4 The Animation",
-      "audio_term": "FLAC",
-      "episode": "13",
-      "episode_title": "A Stormy Summer Vacation Part 1",
-      "file_checksum": "8A45634B",
-      "file_extension": "mkv",
-      "release_group": "Raizel",
-      "source": "BD",
-      "video_resolution": "1080p",
-      "video_term": "Hi10p"
-    },
-    "mal_id": 10588
   },
   {
     "input": "[Rakuda].Gift.~eternal.rainbow~.01.dvd.h.264.vorbis.mkv",
@@ -2042,24 +1800,6 @@
     "mal_id": 12143
   },
   {
-    "input": "[TV-J] Kidou Senshi Gundam UC Unicorn - episode.02 [BD 1920x1080 h264+AAC(5.1ch JP+EN) +Sub(JP-EN-SP-FR-CH) Chap].mp4",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Kidou Senshi Gundam UC Unicorn",
-      "audio_term": [
-        "AAC",
-        "5.1ch"
-      ],
-      "episode": "02",
-      "file_extension": "mp4",
-      "release_group": "TV-J",
-      "source": "BD",
-      "video_resolution": "1920x1080",
-      "video_term": "h264"
-    },
-    "mal_id": 6336
-  },
-  {
     "input": "[TaigaSubs]_Toradora!_(2008)_-_01v2_-_Tiger_and_Dragon_[1280x720_H.264_FLAC][1234ABCD].mkv",
     "source": "anitomy-master",
     "output": {
@@ -2148,21 +1888,6 @@
       "video_term": "x264"
     },
     "mal_id": 3785
-  },
-  {
-    "input": "[UTW-TMD]_Summer_Wars_[BD][h264-720p][TrueHD5.1][9F311DAB].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Summer Wars",
-      "audio_term": "TrueHD5.1",
-      "file_checksum": "9F311DAB",
-      "file_extension": "mkv",
-      "release_group": "UTW-TMD",
-      "source": "BD",
-      "video_resolution": "720p",
-      "video_term": "h264"
-    },
-    "mal_id": 5681
   },
   {
     "input": "[UTW]_Accel_World_-_EX01_[BD][h264-720p_AAC][3E56EE18].mkv",
@@ -2312,18 +2037,6 @@
     "mal_id": 16498
   },
   {
-    "input": "[a4e]R.O.D_the_TV_01[divx5.2.1].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "R.O.D the TV",
-      "type": "TV",
-      "episode": "01",
-      "file_extension": "mkv",
-      "release_group": "a4e"
-    },
-    "mal_id": 209
-  },
-  {
     "input": "[chibi-Doki] Seikon no Qwaser - 13v0 (Uncensored Director's Cut) [988DB090].mkv",
     "source": "anitomy-master",
     "output": {
@@ -2349,19 +2062,6 @@
       "release_group": "gg"
     },
     "mal_id": 9656
-  },
-  {
-    "input": "[kito].Nazca.episode.01.DVDRip.[x264.He-aac.{Jpn}+Sub{Fr}].mkv",
-    "source": "anitomy-master",
-    "output": {
-      "title": "Nazca",
-      "episode": "01",
-      "file_extension": "mkv",
-      "release_group": "kito",
-      "source": "DVDRip",
-      "video_term": "x264"
-    },
-    "mal_id": 1775
   },
   {
     "input": "[tlacatlc6] Natsume Yuujinchou Shi Vol. 1v2 & Vol. 2 (BD 1280x720 x264 AAC)",

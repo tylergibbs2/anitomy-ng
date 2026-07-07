@@ -163,6 +163,40 @@ def load_anitomy_develop() -> list[dict]:
     return cases
 
 
+def _normalize_output(output: dict) -> dict[str, list[str]]:
+    """Canonical form for cross-suite comparison: every value a list of str.
+    Mirrors the order-sensitive comparison the conformance harnesses do."""
+    return {k: (v if isinstance(v, list) else [v]) for k, v in output.items()}
+
+
+def build_develop_index(develop_cases: list[dict]) -> dict[str, dict[str, list[str]]]:
+    return {c["input"]: _normalize_output(c["output"]) for c in develop_cases}
+
+
+def prune_contradicting_develop(
+    cases: list[dict], develop_index: dict[str, dict[str, list[str]]], suite: str
+) -> list[dict]:
+    """Drop cases whose ground truth contradicts anitomy-develop for the same
+    input. develop is the authoritative target: it is upstream's default
+    branch (the live C++23 rewrite), whereas master and anitopy predate it and
+    carry outdated expectations for these exact filenames (older element
+    vocabulary, no Part split, codec+channel fused, multi-language tags
+    dropped, `(TV)`/`- PV` kept in the title, ...). The develop suite still
+    covers every one of these inputs, so pruning the outdated duplicates
+    removes the cross-suite contradiction without losing coverage."""
+    kept = []
+    pruned = 0
+    for case in cases:
+        expected = develop_index.get(case["input"])
+        if expected is not None and _normalize_output(case["output"]) != expected:
+            pruned += 1
+            continue
+        kept.append(case)
+    if pruned:
+        print(f"{suite}: pruned {pruned} case(s) contradicting anitomy-develop")
+    return kept
+
+
 # Some third_party/anitomy-master/test_data.json entries omit "file_extension"
 # even though the filename clearly ends in one of these -- a data-entry gap in
 # the vendored file (master's own compiled binary extracts the extension too).
@@ -285,14 +319,25 @@ def write_suite(name: str, cases: list[dict]) -> None:
 def main() -> None:
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
 
-    write_suite("anitomy_develop", load_anitomy_develop())
-    write_suite("anitomy_master", load_anitomy_master())
+    develop_cases = load_anitomy_develop()
+    write_suite("anitomy_develop", develop_cases)
+
+    # develop is authoritative; prune outdated duplicates from the older suites.
+    develop_index = build_develop_index(develop_cases)
+
+    master_cases = prune_contradicting_develop(
+        load_anitomy_master(), develop_index, "anitomy_master"
+    )
+    write_suite("anitomy_master", master_cases)
 
     anitopy_cases = load_anitopy_table(THIRD_PARTY / "anitopy" / "table.py", "anitopy")
     anitopy_failing_cases = load_anitopy_table(
         THIRD_PARTY / "anitopy" / "failing_table.py", "anitopy-failing"
     )
-    write_suite("anitopy", anitopy_cases + anitopy_failing_cases)
+    anitopy_all = prune_contradicting_develop(
+        anitopy_cases + anitopy_failing_cases, develop_index, "anitopy"
+    )
+    write_suite("anitopy", anitopy_all)
 
     self_rolled_path = FIXTURES_DIR / "self_rolled.json"
     if not self_rolled_path.exists():

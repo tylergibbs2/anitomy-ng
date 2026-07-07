@@ -93,18 +93,9 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("Atmos", 0),
             ("Dolby Atmos", 0),
             ("DD", PREFIX_FOR_OTHER),
-            // Beyond-upstream compounds: upstream's `DD` splits from the
-            // following channel spec (e.g. `2.0`) and never recombines,
-            // losing it. Same fix as `AACx2` above; also in Rapptz/anitomy-rs.
-            ("DD5.1", 0),
-            ("DD2.0", 0),
             ("DDP", PREFIX_FOR_NUMBER),
             ("Dolby TrueHD", 0),
             ("TrueHD", PREFIX_FOR_NUMBER),
-            // Beyond-upstream compound: upstream's `TrueHD` (`PrefixForNumber`)
-            // splits from the following channel spec and never recombines,
-            // losing it. Same fix as `AACx2` above; also in Rapptz/anitomy-rs.
-            ("TrueHD5.1", 0),
             ("DTS", PREFIX_FOR_NUMBER),
             ("DTS-ES", 0),
             ("FLAC", PREFIX_FOR_NUMBER),
@@ -338,12 +329,6 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
         (VideoCodec, &[
             ("AV1", 0),
             ("DivX", PREFIX_FOR_NUMBER),
-            // Beyond-upstream compounds: upstream's `DivX` (`PrefixForNumber`)
-            // splits from the following digit and never recombines, truncating
-            // `DivX5` to `DivX`. Same fix as `AACx2` above; Rapptz/anitomy-rs
-            // registers these two compounds instead of a version-losing `DivX`.
-            ("DivX5", 0),
-            ("DivX6", 0),
             ("AVC", 0),
             ("H 264", 0),
             ("H264", 0),

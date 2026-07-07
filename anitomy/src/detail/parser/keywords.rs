@@ -4,12 +4,8 @@
 
 //! Port of `include/anitomy/detail/parser/keywords.hpp`.
 
-use std::sync::OnceLock;
-
-use regex::Regex;
-
 use crate::detail::keyword::KeywordKind;
-use crate::detail::token::{is_dash_token, is_delimiter_token, is_keyword_token, Token};
+use crate::detail::token::{is_dash_token, is_keyword_token, Token};
 use crate::element::{Element, ElementKind};
 use crate::options::Options;
 
@@ -67,55 +63,6 @@ fn token_value(token: &Token) -> String {
     }
 }
 
-/// e.g. `AACx2`, `AACx3`: a codec name fused with its own channel-count
-/// suffix.
-fn composite_audio_codec_pattern() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)]
-    RE.get_or_init(|| Regex::new(r"^[A-Za-z]+[xX][0-9]$").expect("valid regex"))
-}
-
-/// A bare channel-layout spec, e.g. `5.1`, `2.0`.
-fn bare_channel_layout_pattern() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    #[allow(clippy::expect_used)]
-    RE.get_or_init(|| Regex::new(r"^[0-9]\.[0-9]$").expect("valid regex"))
-}
-
-/// Is the token at `idx` a `Language`-kind keyword joined by a bare `_` to
-/// *another* `Language`-kind keyword on either side, e.g. `Jpn_Chs_Cht`?
-fn is_underscore_chained_language(tokens: &[Token], idx: usize) -> bool {
-    let is_language_at = |i: usize| {
-        tokens
-            .get(i)
-            .and_then(|t| t.keyword)
-            .is_some_and(|k| k.kind == KeywordKind::Language)
-    };
-    let is_underscore_at = |i: usize| {
-        tokens
-            .get(i)
-            .is_some_and(|t| is_delimiter_token(t) && t.value == "_")
-    };
-
-    (idx >= 2 && is_underscore_at(idx - 1) && is_language_at(idx - 2))
-        || (is_underscore_at(idx + 1) && is_language_at(idx + 2))
-}
-
-/// Is the token at `idx` immediately followed by a `.<digits>.<digits>`
-/// tail, e.g. `divx` in `divx5.2.1`? That shape is a dotted version string
-/// rather than a codec name; a codec is followed by a separator, never
-/// another `.`-number pair.
-fn is_dotted_version_tail(tokens: &[Token], idx: usize) -> bool {
-    let is_dot = |i: usize| {
-        tokens
-            .get(i)
-            .is_some_and(|t| is_delimiter_token(t) && t.value == ".")
-    };
-    let is_number = |i: usize| tokens.get(i).is_some_and(|t| t.is_number);
-
-    is_dot(idx + 1) && is_number(idx + 2) && is_dot(idx + 3) && is_number(idx + 4)
-}
-
 pub(super) fn parse_keywords(tokens: &mut [Token], options: &Options) -> Vec<Element> {
     let mut elements = Vec::new();
 
@@ -146,7 +93,15 @@ pub(super) fn parse_keywords(tokens: &mut [Token], options: &Options) -> Vec<Ele
             && token.is_enclosed
             && idx > 0
             && tokens.get(idx - 1).is_some_and(is_dash_token);
-        let starts_with_divx = token.value.to_ascii_lowercase().starts_with("divx");
+        // "Opening" is a common English word that only reads as an episode
+        // type when bracketed (`[Opening]`); bare, it belongs to the title or
+        // episode title (e.g. "Pool Opening"), so suppress it unless enclosed.
+        // Other ambiguous type terms are left surfacing even unenclosed: the
+        // acronyms (OVA/ONA/TV/SP/...) are rarely false positives, and the
+        // remaining words (Special/Ending/Preview/PV) have contradictory
+        // fixture ground truth, so suppressing them regresses more than it fixes.
+        let common_word_type = matches!(keyword.kind, KeywordKind::EpisodeType)
+            && token.value.eq_ignore_ascii_case("opening");
 
         let element_kind = to_element_kind(keyword.kind);
         let identified = (!keyword.ambiguous || token.is_enclosed) && !dash_glued_release_group;
@@ -159,26 +114,9 @@ pub(super) fn parse_keywords(tokens: &mut [Token], options: &Options) -> Vec<Ele
         // common-word false positives when unenclosed, unlike other ambiguous
         // kinds (audio/source/type terms), which should still surface even
         // unenclosed.
-        //
-        // Beyond-upstream fix: a `_`-chained run of 2+ Language keywords in
-        // one bracket, e.g. `[Jpn_Chs_Cht]`, is a multi-language tag rather
-        // than the release's own language (as a lone `[JPN]` would be), so
-        // suppress it. Upstream extracts all three as separate `language`
-        // values; the fixture corpus wants none of them.
-        let chained_language =
-            keyword.kind == KeywordKind::Language && is_underscore_chained_language(tokens, idx);
-        // Beyond-upstream fix: `divx`/`DivX5`/`DivX6` followed by a
-        // `.<digits>.<digits>` tail (e.g. `divx5.2.1`) is a dotted version
-        // string with a codec-shaped prefix, not a codec mention, so suppress
-        // it. Upstream still extracts `divx` here; the fixture corpus wants
-        // nothing.
-        let divx_version_string = keyword.kind == KeywordKind::VideoCodec
-            && starts_with_divx
-            && is_dotted_version_tail(tokens, idx);
-        let suppressed = (keyword.kind == KeywordKind::Language && !identified)
-            || dash_glued_release_group
-            || chained_language
-            || divx_version_string;
+        let suppressed = ((keyword.kind == KeywordKind::Language || common_word_type)
+            && !identified)
+            || dash_glued_release_group;
         if !is_prefix(keyword.kind) && !suppressed {
             let Some(token) = tokens.get(idx) else {
                 continue;
@@ -189,19 +127,6 @@ pub(super) fn parse_keywords(tokens: &mut [Token], options: &Options) -> Vec<Ele
                 position: token.position,
             });
         }
-    }
-
-    // Beyond-upstream fix: a `+`-joined list of bare channel-layout specs
-    // (e.g. `[5.1+2.0]`) alongside a composite codec+channel value (e.g.
-    // `AACx2`) is redundant detail the composite already encodes, so drop it.
-    // Upstream emits both (`AACx2`, `5.1`, `2.0`) as separate `audio_term`
-    // values; the fixture corpus wants only the composite kept.
-    if elements.iter().any(|e| {
-        e.kind == ElementKind::AudioTerm && composite_audio_codec_pattern().is_match(&e.value)
-    }) {
-        elements.retain(|e| {
-            !(e.kind == ElementKind::AudioTerm && bare_channel_layout_pattern().is_match(&e.value))
-        });
     }
 
     elements
