@@ -198,6 +198,20 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
         let x2 = find_prev_token(tokens, idx, is_not_delimiter_token)
             .is_some_and(|p| starts_with_episode_or_type_keyword(tokens, p));
 
+        // A single-digit range glued straight to a title word (`Ranma 1-2`,
+        // `Ranma 1+2`) is a title's own numbering (½-style), not an episode
+        // range: the first number is one digit and its left neighbour is a
+        // free title token, not a dash/episode marker. A real batch range is
+        // dash/marker-anchored (`- 01-02`) or multi-digit. Suppressing the
+        // range leaves `1-2` in the title and lets the real episode (a later
+        // `-NN` or `SxxExx`) be found instead.
+        let glued_to_title = tokens.get(idx).is_some_and(|t| t.value.len() == 1)
+            && find_prev_token(tokens, idx, is_not_delimiter_token)
+                .and_then(|p| tokens.get(p))
+                .is_some_and(|t| {
+                    is_free_token(t) && !t.is_enclosed && !is_numeric_token(t) && t.keyword.is_none()
+                });
+
         // Always attempted (even if x1/x2 already make this valid) — matches upstream's
         // unconditional `is_episode_range` call, whose side effect (populating a second
         // match) is used below regardless of why `valid` ended up true.
@@ -208,6 +222,12 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
                 let after_idx = idx + 2;
                 let after_value = tokens.get(after_idx)?.value.clone();
                 let m2 = match_episode_token(&after_value)?;
+                // A both-single-digit range glued to a title (`1-2`, `1+2`) is
+                // title numbering, not a batch. A real batch reaches double
+                // digits (`1-13`) or isn't glued, so it is unaffected.
+                if glued_to_title && after_value.len() == 1 {
+                    return None;
+                }
                 (to_int(&m1.episode.0) < to_int(&m2.episode.0)).then_some((after_idx, m2))
             });
         let x3 = range_next.is_some();
