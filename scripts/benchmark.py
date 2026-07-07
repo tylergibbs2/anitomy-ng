@@ -222,9 +222,7 @@ def external_engine(
         print(f"  engine command failed: {e}", file=sys.stderr)
         return None
     if proc.returncode != 0:
-        print(
-            f"  engine exited {proc.returncode}: {proc.stderr[-500:]}", file=sys.stderr
-        )
+        print(f"  engine exited {proc.returncode}: {proc.stderr[-500:]}", file=sys.stderr)
         return None
     results: dict[str, Grouped] = {}
     per_file_ns: float | None = None
@@ -281,15 +279,11 @@ def _canonical(grouped: Grouped) -> dict[str, list[str]]:
     return {k: [_canonical_value(v) for v in vs] for k, vs in grouped.items()}
 
 
-def score(
-    corpus: dict[str, list[dict]], results: dict[str, Grouped]
-) -> dict[str, tuple[int, int]]:
+def score(corpus: dict[str, list[dict]], results: dict[str, Grouped]) -> dict[str, tuple[int, int]]:
     per_suite: dict[str, tuple[int, int]] = {}
     for suite, cases in corpus.items():
         passed = sum(
-            1
-            for c in cases
-            if _canonical(results.get(c["input"], {})) == _canonical(c["expected"])
+            1 for c in cases if _canonical(results.get(c["input"], {})) == _canonical(c["expected"])
         )
         per_suite[suite] = (passed, len(cases))
     return per_suite
@@ -349,62 +343,48 @@ def run_rust_bench(n_files: int) -> dict[str, float]:
         return {}
     out: dict[str, float] = {}
     for label in ("anitomy_ng", "rapptz"):
-        est = (
-            bench_dir
-            / "target"
-            / "criterion"
-            / "parse"
-            / label
-            / "new"
-            / "estimates.json"
-        )
+        est = bench_dir / "target" / "criterion" / "parse" / label / "new" / "estimates.json"
         if est.exists():
             out[label] = json.loads(est.read_text())["mean"]["point_estimate"] / n_files
     return out
 
 
-# Cohort display order. Timings live in {cohort: {parser: per_file_ns}}.
+# Cohort keys (also the runtime label shown per row). Timings live in
+# {cohort: {parser: per_file_ns}}.
 COHORT_ORDER = ("Rust", "Python", "JS (Node)", "C++", "C#")
 
 
 def speed_tables(timings: dict[str, dict[str, float]]) -> str:
-    """One per-file-speed table per runtime cohort. Comparisons are only made
-    within a cohort — across runtimes the number would mostly measure the
-    language, not the parser — and anitomy_ng appears in each cohort in its form
-    for that runtime (native Rust, PyO3 binding, wasm)."""
-    if not any(timings.values()):
+    """A single per-file-speed leaderboard across every runtime, fastest first.
+    Each row is labelled `parser (runtime)`, so anitomy_ng appears once per
+    runtime it was measured in (native Rust, PyO3 binding, wasm)."""
+    rows = [(lib, cohort, ns) for cohort, libs in timings.items() for lib, ns in libs.items()]
+    if not rows:
         return ""
     out = [
         "## Speed",
         "",
-        "Per-file parse time, grouped by runtime so each table is a fair,",
-        "same-runtime comparison; anitomy_ng appears in each in its form for that",
-        "runtime. Rust is Criterion's mean; Python/JS/C++ are the median per-file",
-        "time over the corpus in that runtime. Lower is better.",
+        "Per-file parse time across all runtimes, fastest first. Each entry is",
+        "`parser (runtime)`; anitomy_ng appears once per runtime it runs in",
+        "(native Rust, PyO3 binding, wasm). Rust is Criterion's mean; the others",
+        "are the median per-file time over the corpus. Lower is better — but note",
+        "a cross-runtime comparison partly reflects the language/runtime itself,",
+        "not only the parser.",
         "",
+        "| Parser | Per file |",
+        "|---|---|",
     ]
-    for cohort in COHORT_ORDER:
-        libs = timings.get(cohort)
-        if not libs:
-            continue
-        out += [f"### {cohort}", "", "| Parser | Per file |", "|---|---|"]
-        for lib, ns in sorted(libs.items(), key=lambda kv: kv[1]):
-            cell = f"{ns / 1000:.2f} µs" if ns >= 1000 else f"{ns:.0f} ns"
-            out.append(f"| {lib} | {cell} |")
-        out.append("")
+    for lib, cohort, ns in sorted(rows, key=lambda r: r[2]):
+        cell = f"{ns / 1000:.2f} µs" if ns >= 1000 else f"{ns:.0f} ns"
+        out.append(f"| {lib} ({cohort}) | {cell} |")
+    out.append("")
     return "\n".join(out) + "\n"
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Cross-implementation conformance benchmark."
-    )
-    parser.add_argument(
-        "--engines-config", type=Path, help="JSON describing external engines"
-    )
-    parser.add_argument(
-        "--out", type=Path, help="write the Markdown table here (also to stdout)"
-    )
+    parser = argparse.ArgumentParser(description="Cross-implementation conformance benchmark.")
+    parser.add_argument("--engines-config", type=Path, help="JSON describing external engines")
+    parser.add_argument("--out", type=Path, help="write the Markdown table here (also to stdout)")
     parser.add_argument(
         "--speed",
         action="store_true",
@@ -432,9 +412,7 @@ def main() -> int:
         if args.speed:
             import importlib
 
-            timings["Python"][name] = time_python_parse(
-                importlib.import_module(name).parse, inputs
-            )
+            timings["Python"][name] = time_python_parse(importlib.import_module(name).parse, inputs)
 
     if args.engines_config:
         for cfg in json.loads(args.engines_config.read_text(encoding="utf-8")):
