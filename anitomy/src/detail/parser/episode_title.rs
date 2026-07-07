@@ -8,7 +8,7 @@ use crate::detail::container::{find_from, mark};
 use crate::detail::element::{build_element_value, underscore_is_separator};
 use crate::detail::token::{
     is_close_bracket_token, is_enclosed_token, is_free_token, is_identified_token,
-    is_open_bracket_token, Token,
+    is_keyword_token, is_not_delimiter_token, is_open_bracket_token, Token,
 };
 use crate::element::{Element, ElementKind};
 
@@ -78,6 +78,18 @@ fn find_episode_title(tokens: &[Token]) -> (usize, usize) {
 pub(super) fn parse_episode_title(tokens: &mut [Token]) -> Option<Element> {
     let (first, last) = find_episode_title(tokens);
     if first >= last {
+        return None;
+    }
+
+    // A lone recognized keyword (e.g. a trailing `Preview` or `END`) isn't a
+    // real episode title — it already surfaced as its own element (type /
+    // release_information). Reject a span whose only content token is a keyword.
+    let content: Vec<usize> = (first..last)
+        .filter(|&i| tokens.get(i).is_some_and(is_not_delimiter_token))
+        .collect();
+    if content.len() == 1 && content.first().is_some_and(|&i| {
+        tokens.get(i).is_some_and(is_keyword_token)
+    }) {
         return None;
     }
 
