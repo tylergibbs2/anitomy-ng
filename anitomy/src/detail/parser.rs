@@ -79,6 +79,35 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
         elements.extend(episode_title::parse_episode_title(&mut tokens));
     }
 
+    // Minimum-description-length repair: the resolution parser's special case
+    // claims a bare, shapeless number (`1080`/`720` with no `p`/`i`/`×WxH`) as
+    // a resolution when nothing better exists. If that left the filename with
+    // no episode at all, the bare number explains the parse better as the
+    // episode: an episodeless anime filename is atypical, and a shapeless
+    // resolution is a weaker reading than a plain trailing number. This flips
+    // only the shapeless form and only when no episode was found elsewhere, so
+    // a genuine `1080p`/`1920x1080` is never touched.
+    if options.parse_episode
+        && !contains(&elements, ElementKind::Episode)
+        && contains(&elements, ElementKind::Title)
+    {
+        // Only an *unenclosed* bare number reads as an episode: a bracketed
+        // one (e.g. `[BD-1080]`) sits with source/quality tags and is a real
+        // resolution, so a movie/OVA with no episode keeps it.
+        let unenclosed_at = |pos: usize| {
+            tokens
+                .iter()
+                .any(|t| t.position == pos && !t.is_enclosed)
+        };
+        if let Some(e) = elements.iter_mut().find(|e| {
+            e.kind == ElementKind::VideoResolution
+                && e.value.chars().all(|c| c.is_ascii_digit())
+                && unenclosed_at(e.position)
+        }) {
+            e.kind = ElementKind::Episode;
+        }
+    }
+
     // Reconciliation pass: a number that appears twice in different notations
     // (e.g. `S02E06` and `[Episode 6]`, or `Season 1` and `S01`) yields two
     // elements of the same kind for one logical value. No reference parser
