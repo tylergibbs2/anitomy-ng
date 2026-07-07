@@ -79,6 +79,67 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
         elements.extend(episode_title::parse_episode_title(&mut tokens));
     }
 
+    // Reconciliation pass: a number that appears twice in different notations
+    // (e.g. `S02E06` and `[Episode 6]`, or `Season 1` and `S01`) yields two
+    // elements of the same kind for one logical value. No reference parser
+    // has this pass — they emit both. Collapse each padded/unpadded pair to
+    // the cleaner (leading-zero-free) representative.
+    dedupe_zero_padded(&mut elements, ElementKind::Episode);
+    dedupe_zero_padded(&mut elements, ElementKind::Season);
+
     elements.sort_by_key(|e| e.position);
     elements
+}
+
+/// The integer a pure-decimal element value denotes, ignoring leading zeros,
+/// or `None` if it isn't a plain integer (fractional, ranged, alphanumeric).
+fn canonical_int(value: &str) -> Option<u64> {
+    if value.is_empty() || !value.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    value.parse().ok()
+}
+
+/// Collapse `kind` elements whose values denote the same integer to a single
+/// element, keeping the shortest notation (fewest leading zeros), tie-broken
+/// by earliest position — so `["1", "01"]` -> `["1"]`, `["06", "6"]` -> `["6"]`.
+fn dedupe_zero_padded(elements: &mut Vec<Element>, kind: ElementKind) {
+    use std::collections::HashMap;
+
+    // canonical value -> index of the current best representative.
+    let mut best: HashMap<u64, usize> = HashMap::new();
+    let mut drop: Vec<usize> = Vec::new();
+    for (i, e) in elements.iter().enumerate() {
+        if e.kind != kind {
+            continue;
+        }
+        let Some(n) = canonical_int(&e.value) else {
+            continue;
+        };
+        match best.get(&n).copied() {
+            None => {
+                best.insert(n, i);
+            }
+            Some(prev) => {
+                let keep_new = elements.get(prev).is_some_and(|prev_e| {
+                    (e.value.len(), e.position) < (prev_e.value.len(), prev_e.position)
+                });
+                if keep_new {
+                    drop.push(prev);
+                    best.insert(n, i);
+                } else {
+                    drop.push(i);
+                }
+            }
+        }
+    }
+    if drop.is_empty() {
+        return;
+    }
+    let mut i = 0;
+    elements.retain(|_| {
+        let keep = !drop.contains(&i);
+        i += 1;
+        keep
+    });
 }

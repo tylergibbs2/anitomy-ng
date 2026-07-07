@@ -93,8 +93,11 @@ pub(super) fn parse_release_group(tokens: &mut [Token]) -> Option<Element> {
         return None;
     }
 
-    let value =
-        build_element_value(tokens.get(first..last)?, true, underscore_is_separator(tokens));
+    let value = build_element_value(
+        tokens.get(first..last)?,
+        true,
+        underscore_is_separator(tokens),
+    );
     if value.is_empty() {
         return None;
     }

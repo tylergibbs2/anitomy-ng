@@ -48,9 +48,10 @@ fn find_title_fallback_end(tokens: &[Token], first: usize) -> usize {
 
 /// Whether any token in `tokens[first..last)` contains an ASCII letter.
 fn region_has_latin(tokens: &[Token], first: usize, last: usize) -> bool {
-    tokens
-        .get(first..last)
-        .is_some_and(|s| s.iter().any(|t| t.value.chars().any(|c| c.is_ascii_alphabetic())))
+    tokens.get(first..last).is_some_and(|s| {
+        s.iter()
+            .any(|t| t.value.chars().any(|c| c.is_ascii_alphabetic()))
+    })
 }
 
 fn find_title(tokens: &[Token]) -> (usize, usize) {
@@ -140,8 +141,11 @@ pub(super) fn parse_title(tokens: &mut [Token]) -> Option<Element> {
         return None;
     }
 
-    let value =
-        build_element_value(tokens.get(first..last)?, false, underscore_is_separator(tokens));
+    let value = build_element_value(
+        tokens.get(first..last)?,
+        false,
+        underscore_is_separator(tokens),
+    );
     if value.is_empty() {
         return None;
     }

@@ -81,8 +81,11 @@ pub(super) fn parse_episode_title(tokens: &mut [Token]) -> Option<Element> {
         return None;
     }
 
-    let value =
-        build_element_value(tokens.get(first..last)?, false, underscore_is_separator(tokens));
+    let value = build_element_value(
+        tokens.get(first..last)?,
+        false,
+        underscore_is_separator(tokens),
+    );
     // Avoid single-character episode titles.
     if value.chars().count() <= 1 {
         return None;
