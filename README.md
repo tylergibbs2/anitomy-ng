@@ -4,6 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/anitomy-ng.svg)](https://crates.io/crates/anitomy-ng)
 [![docs.rs](https://img.shields.io/docsrs/anitomy-ng.svg)](https://docs.rs/anitomy-ng)
 [![PyPI](https://img.shields.io/pypi/v/anitomy-ng.svg)](https://pypi.org/project/anitomy-ng/)
+[![npm](https://img.shields.io/npm/v/anitomy-ng.svg)](https://www.npmjs.com/package/anitomy-ng)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
 
 A pure-Rust port of [erengy/anitomy](https://github.com/erengy/anitomy), an
