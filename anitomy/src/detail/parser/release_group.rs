@@ -110,6 +110,26 @@ fn find_release_group(tokens: &[Token]) -> (usize, usize) {
                 }
             }
         }
+
+        // Backward peel (forward×backward ensemble): the primary fallback above
+        // stops at the last non-extension token, which is the checksum bracket
+        // in `…x264-CTR.[CRC32].mkv`, so it never reaches the group. Peel past
+        // all trailing metadata — extension, checksum, bracketed tags are
+        // identified or enclosed — to the last *free, unenclosed* token; if a
+        // dash precedes it, that is the scene-style `-GROUP` tail.
+        let peeled = find_prev_token(region, region.len(), |t| {
+            is_free_token(t) && !t.is_enclosed
+        });
+        if let Some(local_idx) = peeled {
+            let idx = search_start + local_idx;
+            if idx > 0
+                && tokens
+                    .get(idx - 1)
+                    .is_some_and(|t| is_delimiter_token(t) && is_dash_token(t))
+            {
+                return (idx, idx + 1);
+            }
+        }
         return (len, len);
     }
 }
