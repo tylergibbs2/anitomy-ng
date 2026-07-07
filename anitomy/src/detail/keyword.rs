@@ -194,6 +194,11 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("Cour", PREFIX_FOR_NUMBER),
             ("Part", AMBIGUOUS | PREFIX_FOR_NUMBER), // e.g. "Extra Part", "Part-Timer"
             ("Parte", PREFIX_FOR_NUMBER),
+            // Abbreviation `pt3`/`pt.2`. Ambiguous (like `Part`), so it only
+            // counts enclosed — e.g. `(Season 04 pt3)` — never as a bare word.
+            // The longer `pt-BR` language keyword still wins by longest-match,
+            // so it isn't mistaken for a part.
+            ("Pt", AMBIGUOUS | PREFIX_FOR_NUMBER),
         ]),
 
         // Release group

@@ -9,5 +9,200 @@
       "episode_title": "Cute People",
       "file_extension": "mkv"
     }
+  },
+  {
+    "input": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E11 1080p CR WEB-DL DUAL AAC2.0 H.264 (Tensei Shitara Slime Datta Ken, Dual-Audio, Multi-Subs)",
+    "source": "nyaa.si",
+    "note": "Real 2025 web release: SxxExx season+episode, split source (CR + WEB-DL), split audio (AAC + 2.0 + Dual-Audio), parenthetical alt-title dropped.",
+    "output": {
+      "release_group": "ToonsHub",
+      "title": "That Time I Got Reincarnated as a Slime",
+      "season": "04",
+      "episode": "11",
+      "source": ["CR", "WEB-DL"],
+      "audio_term": ["AAC", "2.0", "Dual-Audio"],
+      "video_term": "H.264",
+      "video_resolution": "1080p",
+      "subtitles": "Multi-Subs"
+    }
+  },
+  {
+    "input": "[CenturyZeta] BLACK TORCH - 01 (1080p)",
+    "source": "nyaa.si",
+    "note": "Minimal `[Group] Title - NN (res)` layout.",
+    "output": {
+      "release_group": "CenturyZeta",
+      "title": "BLACK TORCH",
+      "episode": "01",
+      "video_resolution": "1080p"
+    }
+  },
+  {
+    "input": "[Chihiro] Himekishi wa Barbaroi no Yome - 12 [1080p HEVC AAC][CE6E3360].mkv",
+    "source": "nyaa.si",
+    "note": "Trailing CRC32 checksum bracket plus file extension.",
+    "output": {
+      "release_group": "Chihiro",
+      "title": "Himekishi wa Barbaroi no Yome",
+      "episode": "12",
+      "video_resolution": "1080p",
+      "video_term": "HEVC",
+      "audio_term": "AAC",
+      "file_checksum": "CE6E3360",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[sam] Dr. STONE - Science Future - S04E37 (WEB 1080p HEVC x265 10-bit EAC-3) [Dual-Audio]",
+    "source": "nyaa.si",
+    "note": "Title with internal dots/dash (`Dr. STONE - Science Future`) preserved; three video terms.",
+    "output": {
+      "release_group": "sam",
+      "title": "Dr. STONE - Science Future",
+      "season": "04",
+      "episode": "37",
+      "source": "WEB",
+      "video_resolution": "1080p",
+      "video_term": ["HEVC", "x265", "10-bit"],
+      "audio_term": "Dual-Audio"
+    }
+  },
+  {
+    "input": "Beyblade X - Episode 108 [English Dub][720p]",
+    "source": "nyaa.si",
+    "note": "No release group; spelled-out `Episode` prefix; `English Dub` audio term.",
+    "output": {
+      "title": "Beyblade X",
+      "episode": "108",
+      "audio_term": "English Dub",
+      "video_resolution": "720p"
+    }
+  },
+  {
+    "input": "[ASW] LIAR GAME - 14 [1080p HEVC x265 10Bit][AAC]",
+    "source": "nyaa.si",
+    "note": "All-caps title kept intact.",
+    "output": {
+      "release_group": "ASW",
+      "title": "LIAR GAME",
+      "episode": "14",
+      "video_resolution": "1080p",
+      "video_term": ["HEVC", "x265", "10Bit"],
+      "audio_term": "AAC"
+    }
+  },
+  {
+    "input": "[Inka-Subs] The Adventures of Marco Polo (1979)",
+    "source": "nyaa.si",
+    "note": "Movie: year only, no episode number.",
+    "output": {
+      "release_group": "Inka-Subs",
+      "title": "The Adventures of Marco Polo",
+      "year": "1979"
+    }
+  },
+  {
+    "input": "[SubsPlease] LasTame S2 (01-12) (1080p) [Batch]",
+    "source": "nyaa.si",
+    "note": "Season marker plus a parenthesised episode range, `Batch` release information.",
+    "output": {
+      "release_group": "SubsPlease",
+      "title": "LasTame",
+      "season": "2",
+      "episode": ["01", "12"],
+      "video_resolution": "1080p",
+      "release_information": "Batch"
+    }
+  },
+  {
+    "input": "LIAR GAME S01E11 Contraband Game 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Multi-Audio, Multi-Subs)",
+    "source": "nyaa.si",
+    "note": "No group bracket: episode title between SxxExx and the tag run, scene-style trailing `-VARYG` group.",
+    "output": {
+      "title": "LIAR GAME",
+      "season": "01",
+      "episode": "11",
+      "episode_title": "Contraband Game",
+      "video_resolution": "1080p",
+      "source": ["CR", "WEB-DL"],
+      "audio_term": ["AAC", "2.0", "Multi-Audio"],
+      "video_term": "H 264",
+      "release_group": "VARYG",
+      "subtitles": "Multi-Subs"
+    }
+  },
+  {
+    "input": "[Raze] Grand Blue S3 - 01 x265 10bit 1080p 143.8561fps.mkv",
+    "source": "nyaa.si",
+    "note": "Compact `S3` season marker; unusual fps token is ignored.",
+    "output": {
+      "release_group": "Raze",
+      "title": "Grand Blue",
+      "season": "3",
+      "episode": "01",
+      "video_term": ["x265", "10bit"],
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[WBDP] The Morose Mononokean (Complete) (S1, S2) [BD][1080p-FLAC][HEVC]",
+    "source": "nyaa.si",
+    "note": "Multi-season batch: two season values, `Complete` release information.",
+    "output": {
+      "release_group": "WBDP",
+      "title": "The Morose Mononokean",
+      "season": ["1", "2"],
+      "release_information": "Complete",
+      "source": "BD",
+      "video_resolution": "1080p",
+      "audio_term": "FLAC",
+      "video_term": "HEVC"
+    }
+  },
+  {
+    "input": "[nekotan] Turn a Gundam S01 (BD 1080p x264 10-bit Opus)",
+    "source": "nyaa.si",
+    "note": "Title with a lowercase interior word (`Turn a Gundam`); Opus audio.",
+    "output": {
+      "release_group": "nekotan",
+      "title": "Turn a Gundam",
+      "season": "01",
+      "source": "BD",
+      "video_resolution": "1080p",
+      "video_term": ["x264", "10-bit"],
+      "audio_term": "Opus"
+    }
+  },
+  {
+    "input": "[Judas] Dr Stone - Science Future (Season 04 pt3) [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs] (Batch)",
+    "source": "nyaa.si",
+    "note": "`pt3` part abbreviation (glued). Added 'Pt' as an ambiguous part-prefix keyword in detail/keyword.rs; it only counts enclosed, and the longer 'pt-BR' language keyword still wins by longest-match so it isn't mistaken for a part.",
+    "output": {
+      "release_group": "Judas",
+      "title": "Dr Stone - Science Future",
+      "season": "04",
+      "part": "3",
+      "video_resolution": "1080p",
+      "video_term": ["HEVC", "x265", "10bit"],
+      "audio_term": "Dual-Audio",
+      "subtitles": "Multi-Subs",
+      "release_information": "Batch"
+    }
+  },
+  {
+    "input": "[Judas] Yuusha no Kuzu (Scum of the Brave) (Season 1 pt.2) [1080p][HEVC x265 10bit][Multi-Subs] (Batch)",
+    "source": "nyaa.si",
+    "note": "`pt.2` part abbreviation (dot-separated); parenthetical English alt-title stays in the title, matching how the corpus handles `(alt name)` asides.",
+    "output": {
+      "release_group": "Judas",
+      "title": "Yuusha no Kuzu (Scum of the Brave)",
+      "season": "1",
+      "part": "2",
+      "video_resolution": "1080p",
+      "video_term": ["HEVC", "x265", "10bit"],
+      "subtitles": "Multi-Subs",
+      "release_information": "Batch"
+    }
   }
 ]
