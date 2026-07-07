@@ -32,3 +32,25 @@ jobs:
       - uses: astral-sh/setup-uv@v3
       - working-directory: anitomy-py
         run: uv run --extra test pytest tests/ -q
+
+  dotnet-test:
+    # Builds the C ABI natively, then runs the C# binding's tests against it —
+    # this exercises the whole C#↔C-ABI↔Rust path on each OS (the per-OS native
+    # library name is why `lib` differs). Packaging lives in nuget.yml.
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-latest, lib: libanitomy.so }
+          - { os: macos-latest, lib: libanitomy.dylib }
+          - { os: windows-latest, lib: anitomy.dll }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: cargo build -p anitomy-ng-c --release
+      - run: >
+          dotnet test bindings/csharp/AnitomyNg.Tests/AnitomyNg.Tests.csproj -c Release
+          -p:NativeLib=${{ github.workspace }}/target/release/${{ matrix.lib }}

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The [LibraryImport] source generator emits unsafe marshalling stubs. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Ship XML docs for the API, but don't require a doc comment on every
+         self-descriptive enum member / Options flag. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- NuGet package metadata. Version is overridden in CI (-p:Version=…). -->
+    <PackageId>AnitomyNg</PackageId>
+    <Version>1.0.1</Version>
+    <Authors>Tyler Gibbs</Authors>
+    <Description>Anime video filename parser — .NET bindings for the anitomy-ng Rust crate. Prebuilt native binaries ship in the package, so consumers need no Rust toolchain.</Description>
+    <PackageProjectUrl>https://github.com/tylergibbs2/anitomy-ng</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/tylergibbs2/anitomy-ng</RepositoryUrl>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>anime;parser;filename;anitomy;ffi</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+    <!-- Native libraries, one per runtime identifier (RID), are staged into
+         runtimes/<rid>/native/ by CI before `dotnet pack` (see the release
+         workflow). .NET's native probing then loads the correct one per OS/arch
+         automatically, so consumers never build Rust. -->
+    <None Include="runtimes/**" Pack="true" PackagePath="runtimes" />
+  </ItemGroup>
+
+</Project>

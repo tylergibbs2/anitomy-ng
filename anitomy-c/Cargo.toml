@@ -1,0 +1,27 @@
+[package]
+name = "anitomy-ng-c"
+description = "C ABI for anitomy-ng (anime video filename parser); basis for non-Rust bindings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["anime", "parser", "filename", "anitomy", "ffi"]
+categories = ["external-ffi-bindings", "parser-implementations"]
+publish = false
+
+[lib]
+name = "anitomy"
+# cdylib: the shared library (.so/.dylib/.dll) that C#, C, Go, etc. link against.
+# staticlib: the .a for consumers that statically link.
+# lib (rlib): lets this crate's own integration tests call the exported fns.
+crate-type = ["cdylib", "staticlib", "lib"]
+
+[dependencies]
+anitomy-ng = { path = "../anitomy" }
+
+[build-dependencies]
+# Generates include/anitomy.h from the extern "C" definitions so the header
+# can't drift from the ABI. Header generation is best-effort (see build.rs):
+# a cbindgen hiccup warns but never fails the library build.
+cbindgen = "0.27"

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- Run on a newer runtime when the exact net8.0 runtime isn't installed. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AnitomyNg/AnitomyNg.csproj" />
+  </ItemGroup>
+
+  <!-- Copy the locally-built native library next to the test assembly so the
+       P/Invoke resolver finds it. NATIVE_LIB is passed by CI / the local build;
+       falls back to the workspace debug build. -->
+  <PropertyGroup>
+    <NativeLib Condition="'$(NativeLib)' == ''">$(MSBuildThisFileDirectory)../../../target/debug/libanitomy.dylib</NativeLib>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(NativeLib)')">
+    <None Include="$(NativeLib)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

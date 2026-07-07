@@ -5,11 +5,12 @@
 [![docs.rs](https://img.shields.io/docsrs/anitomy-ng.svg)](https://docs.rs/anitomy-ng)
 [![PyPI](https://img.shields.io/pypi/v/anitomy-ng.svg)](https://pypi.org/project/anitomy-ng/)
 [![npm](https://img.shields.io/npm/v/anitomy-ng.svg)](https://www.npmjs.com/package/anitomy-ng)
+[![NuGet](https://img.shields.io/nuget/v/AnitomyNg.svg)](https://www.nuget.org/packages/AnitomyNg)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
 
 A pure-Rust port of [erengy/anitomy](https://github.com/erengy/anitomy), an
-anime video filename parser, with Python bindings. No `unsafe`, no C
-dependencies.
+anime video filename parser, with Python, JavaScript, and .NET bindings. The
+core library is pure safe Rust — no `unsafe`, no C dependencies.
 
 ```
 [TaigaSubs]_Toradora!_(2008)_-_01v2_-_Tiger_and_Dragon_[1280x720_H.264_FLAC][1234ABCD].mkv
@@ -53,6 +54,12 @@ cargo binstall anitomy-ng               # prebuilt binary, no toolchain needed
 cargo install anitomy-ng --features cli # builds from source
 ```
 
+.NET (prebuilt native binaries ship in the package — no Rust toolchain needed):
+
+```sh
+dotnet add package AnitomyNg
+```
+
 ## Usage
 
 Rust:
@@ -90,7 +97,19 @@ for (const element of parse(
 }
 ```
 
-All three return an ordered list of elements (position in the filename, kind,
+C# / .NET:
+
+```csharp
+using AnitomyNg;
+
+foreach (var element in Anitomy.Parse(
+    "[TaigaSubs]_Toradora!_(2008)_-_01v2_-_Tiger_and_Dragon_[1280x720_H.264_FLAC][1234ABCD].mkv"))
+{
+    Console.WriteLine($"{element.Kind}: {element.Value}");
+}
+```
+
+They all return an ordered list of elements (position in the filename, kind,
 and value); `ElementKind`/`kind` covers title, episode, season, release group,
 video/audio terms, resolution, checksum, and so on — see
 [`anitomy/src/element.rs`](anitomy/src/element.rs) for the full set.
@@ -113,6 +132,10 @@ Pass `--no-title`, `--no-episode`, etc. to disable individual categories; see
 anitomy/       core Rust crate (published as `anitomy-ng`) — no unsafe, no non-dev dependencies
 anitomy-py/    Python bindings (pyo3 + maturin, published as `anitomy-ng`), typed:
                ElementKind is a real enum.Enum, Element a real dataclass
+anitomy-js/    JavaScript/TypeScript bindings (wasm-bindgen, published to npm as `anitomy-ng`)
+anitomy-c/     C ABI (cdylib/staticlib) over the core — the only crate with `unsafe`;
+               the foundation for non-Rust bindings
+bindings/csharp/  .NET bindings (P/Invoke over anitomy-c, published to NuGet as `AnitomyNg`)
 third_party/   vendored upstream test fixtures, not compiled — see third_party/README.md
 scripts/       fixture-generation tooling
 ```
