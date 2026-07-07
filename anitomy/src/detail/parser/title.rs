@@ -46,6 +46,13 @@ fn find_title_fallback_end(tokens: &[Token], first: usize) -> usize {
     len
 }
 
+/// Whether any token in `tokens[first..last)` contains an ASCII letter.
+fn region_has_latin(tokens: &[Token], first: usize, last: usize) -> bool {
+    tokens
+        .get(first..last)
+        .is_some_and(|s| s.iter().any(|t| t.value.chars().any(|c| c.is_ascii_alphabetic())))
+}
+
 fn find_title(tokens: &[Token]) -> (usize, usize) {
     let len = tokens.len();
 
@@ -67,6 +74,27 @@ fn find_title(tokens: &[Token]) -> (usize, usize) {
         first = find_from(tokens, 0, is_close_bracket_token);
         first = find_from(tokens, first, is_free_token);
         last = find_title_fallback_end(tokens, first);
+
+        // Common Chinese-fansub layout `[group][中文名][English Name][ep]`: the
+        // first title candidate after the group is a CJK name with no Latin
+        // letters, immediately followed by the romanized/English title in its
+        // own bracket. Prefer the first later candidate that has Latin letters.
+        if first != len && !region_has_latin(tokens, first, last) {
+            let mut probe = last;
+            loop {
+                probe = find_from(tokens, probe, is_free_token);
+                if probe == len {
+                    break;
+                }
+                let probe_end = find_title_fallback_end(tokens, probe);
+                if region_has_latin(tokens, probe, probe_end) {
+                    first = probe;
+                    last = probe_end;
+                    break;
+                }
+                probe = probe_end;
+            }
+        }
     }
 
     // Allow filenames without a title.
