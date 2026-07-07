@@ -17,12 +17,13 @@ Two kinds of engine:
 - Python engines, called in-process: `anitomy_ng` (required) and, if installed,
   `anitopy`.
 - External engines, described by --engines-config JSON as
-  `[{"name": "...", "schema": "current"|"old", "cmd": ["..."]}]`. Each command
-  is run once; the benchmark writes every corpus input to its stdin (one per
-  line, UTF-8) and reads back JSONL, one object per line:
+  `[{"name": "...", "label": "...", "schema": "current"|"old", "cmd": ["..."]}]`.
+  Each command is run once; the benchmark writes every corpus input to its stdin
+  (one per line, UTF-8) and reads back JSONL, one object per line:
   `{"input": "<the input>", "output": {"<kind>": ["<value>", ...], ...}}`.
   `schema` says whether the emitted keys are current `ElementKind` names or the
   old anitomy/anitopy category names (converted here via build_fixtures).
+  `label` (optional) is the column header shown in the table; defaults to `name`.
 
 Engines that aren't available (module not importable, command missing/failing)
 are reported as skipped rather than silently omitted.
@@ -207,10 +208,12 @@ def main() -> int:
         for cfg in json.loads(args.engines_config.read_text(encoding="utf-8")):
             print(f"running external engine: {cfg['name']}", file=sys.stderr)
             results = external_engine(cfg["cmd"], cfg.get("schema", "current"), inputs)
+            # `label` is the display/column name; `name` stays the internal id.
+            label = cfg.get("label", cfg["name"])
             if results is None:
-                skipped.append(cfg["name"])
+                skipped.append(label)
             else:
-                scores[cfg["name"]] = score(corpus, results)
+                scores[label] = score(corpus, results)
 
     table = markdown_table(scores, corpus)
     if skipped:

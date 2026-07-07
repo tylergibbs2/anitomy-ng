@@ -53,11 +53,16 @@ jobs:
         id: anitomy_develop
         continue-on-error: true
         run: |
-          sudo apt-get update && sudo apt-get install -y g++-14
-          g++-14 -std=c++23 -O2 -I_ref/anitomy-develop/include \
+          # erengy/anitomy@develop uses std::ranges::starts_with — a C++23
+          # library feature libstdc++ ships only from GCC 15, so g++-14 fails
+          # with "'starts_with' is not a member of 'std::ranges'". Pull g++-15
+          # from the toolchain PPA and build with it.
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update && sudo apt-get install -y g++-15
+          g++-15 -std=c++23 -O2 -I_ref/anitomy-develop/include \
             scripts/adapters/anitomy_develop.cpp -o "$GITHUB_WORKSPACE/develop-adapter"
           cat > engine_anitomy_develop.json <<JSON
-          {"name":"anitomy_develop","schema":"current","cmd":["$GITHUB_WORKSPACE/develop-adapter"]}
+          {"name":"anitomy_develop","label":"anitomy@develop","schema":"current","cmd":["$GITHUB_WORKSPACE/develop-adapter"]}
           JSON
           echo "- anitomy_develop: erengy/anitomy@$(git -C _ref/anitomy-develop rev-parse --short HEAD)" >> refs.md
 
@@ -75,7 +80,7 @@ jobs:
             scripts/adapters/anitomy_master.cpp _ref/anitomy-master/anitomy/*.cpp \
             -o "$GITHUB_WORKSPACE/master-adapter"
           cat > engine_anitomy_master.json <<JSON
-          {"name":"anitomy_master","schema":"old","cmd":["$GITHUB_WORKSPACE/master-adapter"]}
+          {"name":"anitomy_master","label":"anitomy@master","schema":"old","cmd":["$GITHUB_WORKSPACE/master-adapter"]}
           JSON
           echo "- anitomy_master: erengy/anitomy@$(git -C _ref/anitomy-master rev-parse --short HEAD)" >> refs.md
 
