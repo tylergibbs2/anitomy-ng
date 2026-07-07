@@ -24,7 +24,7 @@ Writes:
   anitomy/tests/fixtures/anitomy_master.json
   anitomy/tests/fixtures/anitopy.json
 
-Does NOT touch anitomy/tests/fixtures/self_rolled.json -- that suite is
+Does NOT touch anitomy/tests/fixtures/anitomy_ng.json -- that suite is
 hand-maintained, not generated.
 
 Nothing is silently dropped. A case whose only obstacle is an
@@ -339,17 +339,17 @@ def main() -> None:
     )
     write_suite("anitopy", anitopy_all)
 
-    self_rolled_path = FIXTURES_DIR / "self_rolled.json"
-    if not self_rolled_path.exists():
-        self_rolled_path.write_text("[]\n", encoding="utf-8")
+    anitomy_ng_path = FIXTURES_DIR / "anitomy_ng.json"
+    if not anitomy_ng_path.exists():
+        anitomy_ng_path.write_text("[]\n", encoding="utf-8")
         print(
-            f"self_rolled: 0 cases (seeded empty, hand-maintained) -> {self_rolled_path.relative_to(ROOT)}"
+            f"anitomy_ng: 0 cases (seeded empty, hand-maintained) -> {anitomy_ng_path.relative_to(ROOT)}"
         )
     else:
-        existing = json.loads(self_rolled_path.read_text(encoding="utf-8"))
+        existing = json.loads(anitomy_ng_path.read_text(encoding="utf-8"))
         print(
-            f"self_rolled: {len(existing)} cases (hand-maintained, not regenerated) -> "
-            f"{self_rolled_path.relative_to(ROOT)}"
+            f"anitomy_ng: {len(existing)} cases (hand-maintained, not regenerated) -> "
+            f"{anitomy_ng_path.relative_to(ROOT)}"
         )
 
 

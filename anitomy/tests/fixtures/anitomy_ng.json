@@ -1,7 +1,19 @@
 [
   {
+    "input": "Miss Kobayashi's Dragon Maid - S00E31 [A Lonely Dragon Wants to be Loved].mkv",
+    "source": "nyaa.si",
+    "note": "TRACKED KNOWN FAILURE (in tests/known_failures/self_rolled.txt). A real file from the neoDESU bundle's Specials folder. The bracketed phrase is the episode title, but release_group runs before episode_title and greedily claims the only trailing bracket, so we emit release_group instead. `Title - NN [X]` is structurally identical whether X is a group (`[Taka]`) or an episode title, and word-count heuristics regress real multi-word groups (`[bodlerov & torrents ru]`), so this is left as the recorded-correct-but-unreached target rather than fixed by overfitting.",
+    "output": {
+      "title": "Miss Kobayashi's Dragon Maid",
+      "season": "00",
+      "episode": "31",
+      "episode_title": "A Lonely Dragon Wants to be Loved",
+      "file_extension": "mkv"
+    }
+  },
+  {
     "input": "Sasameki Koto E02: Cute People.mkv",
-    "source": "self-rolled",
+    "source": "anitomy-ng",
     "note": "github.com/erengy/anitomy issue #37 -- colon between an episode marker and the episode title wasn't a recognized delimiter, so the whole filename fell back to being the title. Fixed by adding ':' to detail/delimiter.rs's is_delimiter (verified against upstream's develop/master headers: neither treats it as a delimiter either, so this is a beyond-upstream fix, not a missed port detail).",
     "output": {
       "title": "Sasameki Koto",

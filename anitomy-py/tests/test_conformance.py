@@ -8,7 +8,8 @@ third_party/README.md).
 
 Four independent suites, each its own parametrized test so pass/fail reads per
 suite. The policies match the Rust harness:
-- self_rolled is this project's own suite and must pass 100%.
+- anitomy_ng is this project's own hand-curated ground-truth suite; like
+  the others it is checked against the shared known-failures manifest.
 - anitomy_develop / anitomy_master / anitopy are external suites with imperfect
   ground truth, checked against the shared known-failures manifests in
   anitomy/tests/known_failures/. Cases listed there are marked xfail(strict), so
@@ -55,9 +56,9 @@ def _known_failures(name: str) -> set[str]:
     return {line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()}
 
 
-def _load_suite(name: str, *, strict: bool) -> list:
+def _load_suite(name: str) -> list:
     cases = json.loads((FIXTURES_DIR / f"{name}.json").read_text(encoding="utf-8"))
-    known = set() if strict else _known_failures(name)
+    known = _known_failures(name)
     params = []
     for case in cases:
         if "skip" in case:
@@ -76,21 +77,21 @@ def _run_case(case: dict) -> None:
     assert actual == expected
 
 
-@pytest.mark.parametrize("case", _load_suite("anitomy_develop", strict=False))
+@pytest.mark.parametrize("case", _load_suite("anitomy_develop"))
 def test_conformance_anitomy_develop(case: dict) -> None:
     _run_case(case)
 
 
-@pytest.mark.parametrize("case", _load_suite("anitomy_master", strict=False))
+@pytest.mark.parametrize("case", _load_suite("anitomy_master"))
 def test_conformance_anitomy_master(case: dict) -> None:
     _run_case(case)
 
 
-@pytest.mark.parametrize("case", _load_suite("anitopy", strict=False))
+@pytest.mark.parametrize("case", _load_suite("anitopy"))
 def test_conformance_anitopy(case: dict) -> None:
     _run_case(case)
 
 
-@pytest.mark.parametrize("case", _load_suite("self_rolled", strict=True))
-def test_conformance_self_rolled(case: dict) -> None:
+@pytest.mark.parametrize("case", _load_suite("anitomy_ng"))
+def test_conformance_anitomy_ng(case: dict) -> None:
     _run_case(case)

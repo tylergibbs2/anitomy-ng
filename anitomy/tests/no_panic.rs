@@ -70,7 +70,7 @@ fn never_panics_on_fixture_corpus() {
         include_str!("fixtures/anitomy_develop.json"),
         include_str!("fixtures/anitomy_master.json"),
         include_str!("fixtures/anitopy.json"),
-        include_str!("fixtures/self_rolled.json"),
+        include_str!("fixtures/anitomy_ng.json"),
     ];
 
     let prev_hook = panic::take_hook();

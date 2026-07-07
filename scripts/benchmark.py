@@ -41,7 +41,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES_DIR = ROOT / "anitomy" / "tests" / "fixtures"
-SUITES = ("anitomy_develop", "anitomy_master", "anitopy", "self_rolled")
+SUITES = ("anitomy_develop", "anitomy_master", "anitopy", "anitomy_ng")
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_fixtures import OLD_KEY_MAP  # noqa: E402  (path set up just above)

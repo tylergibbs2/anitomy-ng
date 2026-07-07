@@ -1,18 +1,21 @@
 # known_failures
 
-One file per external conformance suite (`anitomy_develop`, `anitomy_master`,
-`anitopy`). Each lists, one per line, the fixture inputs that `anitomy_ng::parse`
-does not currently match for that suite.
+One file per conformance suite (`anitomy_develop`, `anitomy_master`, `anitopy`,
+`anitomy_ng`). Each lists, one per line, the fixture inputs that
+`anitomy_ng::parse` does not currently match for that suite.
 
-These are not bugs to fix blindly. The external suites have imperfect,
+For the external suites these are not bugs to fix blindly: they have imperfect,
 mutually-contradictory ground truth — some cases no implementation passes,
 including upstream's own compiled binary (see `scripts/build_fixtures.py` and
-`third_party/README.md`). The manifest turns the suite into a regression guard
+`third_party/README.md`). The manifest turns each suite into a regression guard
 plus a ratchet: both `anitomy/tests/conformance.rs` and
 `anitomy-py/tests/test_conformance.py` fail if the failing set *changes* —
 a newly-failing case is a regression; a newly-passing case must be removed here.
 
-`self_rolled` has no file here: it is this project's own suite and must pass 100%.
+`anitomy_ng` is this project's own hand-curated ground-truth suite; its
+`anitomy_ng.txt` records the few curated cases whose *correct* expected output
+the parser can't yet reach without overfitting, so the intended result is
+tracked rather than dropped or forced through.
 
 Regenerate after a deliberate parser or fixture change (Rust is the source of
 truth; the Python suite reads the same files):

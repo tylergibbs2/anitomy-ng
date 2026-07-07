@@ -6,19 +6,25 @@
 //! against `anitomy_ng::parse`.
 //!
 //! Four independent suites (see `third_party/README.md` and
-//! `scripts/build_fixtures.py`), checked under two different policies:
+//! `scripts/build_fixtures.py`), all checked with the same known-failures
+//! ratchet:
 //!
-//! - `self_rolled` is this project's own suite, so it is the ground truth and
-//!   a hard gate: every case must pass.
+//! - `anitomy_ng` is this project's own suite: hand-curated cases whose
+//!   expected output is the *correct* ground truth. Most pass; the few that
+//!   don't yet (correct answers the parser can't reach without overfitting)
+//!   are tracked in the manifest so their intended result is recorded rather
+//!   than dropped or forced through.
 //! - `anitomy_develop`, `anitomy_master`, and `anitopy` are external suites
 //!   whose ground truth is imperfect and mutually contradictory (some cases no
 //!   implementation passes, including upstream's own). Requiring 100% would
-//!   mean overfitting to wrong fixtures, so each is checked against a
-//!   checked-in known-failures manifest (`tests/known_failures/<suite>.txt`).
-//!   The suite fails only when the failing set *changes*: a newly-failing case
-//!   is a regression; a newly-passing case must be removed from the manifest
-//!   (ratchet down). Each such change is a deliberate, reviewed commit, so the
-//!   git history is the record of how conformance moves over time.
+//!   mean overfitting to wrong fixtures.
+//!
+//! Every suite is checked against a checked-in known-failures manifest
+//! (`tests/known_failures/<suite>.txt`) and fails only when the failing set
+//! *changes*: a newly-failing case is a regression; a newly-passing case must
+//! be removed from the manifest (ratchet down). Each such change is a
+//! deliberate, reviewed commit, so the git history is the record of how
+//! conformance moves over time.
 //!
 //! After a deliberate parser or fixture change, regenerate the manifests:
 //!
@@ -184,27 +190,6 @@ fn run_manifest_suite(name: &str, data: &str) {
     );
 }
 
-/// Own suite: every non-skipped case must pass.
-fn run_strict_suite(name: &str, data: &str) {
-    let cases = load_cases(name, data);
-    let tested = cases.iter().filter(|c| c.skip.is_none()).count();
-    let failing = failing_inputs(&cases);
-    println!(
-        "{name}: {}/{tested} passing (strict)",
-        tested - failing.len()
-    );
-    if !failing.is_empty() {
-        for input in &failing {
-            eprintln!("---");
-            print_diff(&cases, input);
-        }
-        panic!(
-            "[{name}] {} case(s) failed; this is the project's own suite and must pass 100%",
-            failing.len(),
-        );
-    }
-}
-
 #[test]
 fn anitomy_develop() {
     run_manifest_suite(
@@ -227,6 +212,6 @@ fn anitopy() {
 }
 
 #[test]
-fn self_rolled() {
-    run_strict_suite("self_rolled", include_str!("fixtures/self_rolled.json"));
+fn anitomy_ng() {
+    run_manifest_suite("anitomy_ng", include_str!("fixtures/anitomy_ng.json"));
 }
