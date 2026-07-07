@@ -65,6 +65,22 @@ fn find_title(tokens: &[Token]) -> (usize, usize) {
         return (len, len);
     }
 
+    // A leading corner-bracket group `「…」` is a stylized title (Japanese
+    // quotation marks), not a metadata bracket — take it whole, brackets
+    // included (e.g. `「K」 Image …` -> title `「K」`). Returning early keeps the
+    // closing `」` from being stripped as a trailing bracket below.
+    if tokens
+        .first()
+        .is_some_and(|t| is_open_bracket_token(t) && t.value == "\u{300C}")
+    {
+        let close = find_from(tokens, 1, |t| {
+            is_close_bracket_token(t) && t.value == "\u{300D}"
+        });
+        if close < len {
+            return (0, close + 1);
+        }
+    }
+
     // Find the first free unenclosed range, e.g. `[Group] Title - Episode [Info]`.
     let mut first = find_from(tokens, 0, |t| is_free_token(t) && !is_enclosed_token(t));
     let mut last = find_from(tokens, first, is_identified_token);

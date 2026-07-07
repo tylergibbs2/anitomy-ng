@@ -131,6 +131,16 @@ pub(crate) fn build_element_value(
         }
     }
 
+    // A run of 3+ trailing dots is a canonical ellipsis (`I Am...`), not a
+    // separator run. The trim above dropped all of them; restore a single
+    // canonical `...` (one of the dots may have been the field separator, so
+    // the run length isn't preserved).
+    let trailing_ellipsis = !keep_delimiters
+        && tokens
+            .get(end..)
+            .map_or(0, |s| s.iter().take_while(|t| first_char(t) == Some('.')).count())
+            >= 3;
+
     let mut value = String::new();
     for token in tokens.get(..end).unwrap_or(&[]) {
         if is_transformable_delimiter(token) {
@@ -138,6 +148,9 @@ pub(crate) fn build_element_value(
         } else {
             value.push_str(&token.value);
         }
+    }
+    if trailing_ellipsis {
+        value.push_str("...");
     }
     value
 }
