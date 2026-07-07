@@ -20,6 +20,10 @@ on:
         description: "Publish the anitomy-ng wasm package to npm"
         type: boolean
         default: true
+      binaries:
+        description: "Build prebuilt CLI binaries and attach them to a GitHub Release"
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -96,3 +100,123 @@ jobs:
         # Tokenless: authenticates via GitHub OIDC against the trusted publisher
         # configured on npmjs.com, and attaches signed build provenance.
         run: npm publish --provenance --access public
+
+  # ---- Prebuilt CLI binaries, attached to a GitHub Release ----
+  # Resolve the version once (from the crate metadata) so every downstream job
+  # names its artifacts and the release tag identically.
+  binaries-prepare:
+    if: ${{ inputs.binaries }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: v${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - id: meta
+        run: |
+          version=$(cargo metadata --format-version 1 --no-deps \
+            | jq -r '.packages[] | select(.name == "anitomy-ng") | .version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  binaries-build:
+    needs: binaries-prepare
+    if: ${{ inputs.binaries }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-latest, cross: true }
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, cross: true }
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.binaries-prepare.outputs.version }}
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # Cross linker/runner for the Linux targets that aren't the runner's own
+      # arch/libc (aarch64, musl); a no-op for the native macOS/Windows builds.
+      - if: ${{ matrix.cross }}
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --features cli --bin anitomy --target "$TARGET"
+      - name: Archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="anitomy-${VERSION}-${TARGET}"
+          mkdir "$stage"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp "target/${TARGET}/release/anitomy.exe" "$stage/"
+          else
+            cp "target/${TARGET}/release/anitomy" "$stage/"
+          fi
+          cp LICENSE README.md "$stage/"
+          # Files sit at the archive root (no leading dir), matching the
+          # binstall bin-dir in anitomy/Cargo.toml.
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ( cd "$stage" && 7z a "../${stage}.zip" . >/dev/null )
+          else
+            tar -C "$stage" -czf "${stage}.tar.gz" .
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: |
+            anitomy-*.tar.gz
+            anitomy-*.zip
+          if-no-files-found: error
+
+  publish-binaries:
+    needs: [binaries-prepare, binaries-build]
+    if: ${{ inputs.binaries }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write # create the release + tag the commit + upload assets
+      id-token: write # OIDC used to sign the build-provenance attestation
+      attestations: write # record the provenance attestation
+    env:
+      TAG: ${{ needs.binaries-prepare.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: cli-*
+          merge-multiple: true # flatten every cli-<target> artifact into dist/
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum anitomy-* > SHA256SUMS
+      # Signed SLSA provenance for each archive (matches the PyPI/npm attestations).
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/anitomy-*.tar.gz
+            dist/anitomy-*.zip
+      - name: Create or update the GitHub Release
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Re-run: refresh assets on the existing release instead of failing.
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --generate-notes \
+              dist/*
+          fi

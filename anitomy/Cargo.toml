@@ -20,6 +20,34 @@ categories = ["parser-implementations"]
 # suites confirm it).
 regex = { version = "1", default-features = false, features = ["std"] }
 
+# CLI-only, and optional so plain library users (`cargo add anitomy-ng`) pull
+# nothing extra — these are pulled in only by the `cli` feature below.
+clap = { version = "4", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[features]
+# Builds the `anitomy` command-line binary (`cargo install anitomy-ng --features cli`).
+cli = ["dep:clap", "dep:serde_json"]
+
+# The `anitomy` CLI lives in this crate (src/main.rs) rather than a separate
+# crate, but only compiles when the `cli` feature is on, so it never affects
+# library builds.
+[[bin]]
+name = "anitomy"
+path = "src/main.rs"
+required-features = ["cli"]
+
+# Lets `cargo binstall anitomy-ng` fetch a prebuilt binary from the GitHub
+# Release instead of compiling. The URL/format must match what release.yml's
+# binary jobs upload (anitomy-<version>-<target>.tar.gz, .zip on Windows).
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/anitomy-{ version }-{ target }{ archive-suffix }"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-fmt = "zip"

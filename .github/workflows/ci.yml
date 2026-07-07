@@ -13,7 +13,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy -p anitomy-ng --all-targets -- -D warnings
+      # `--features cli` so the `anitomy` binary (gated behind that feature) is
+      # linted too, not just the library.
+      - run: cargo clippy -p anitomy-ng --all-targets --features cli -- -D warnings
       # Lint the wasm binding too (compiles natively for the check); the actual
       # wasm build + smoke test live in wasm.yml.
       - run: cargo clippy -p anitomy-js --all-targets -- -D warnings

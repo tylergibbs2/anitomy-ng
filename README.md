@@ -44,6 +44,15 @@ JavaScript / TypeScript (WebAssembly, works in Node and bundlers):
 npm install anitomy-ng
 ```
 
+Command line — prebuilt binaries for Linux, macOS, and Windows are attached to
+each [GitHub release](https://github.com/tylergibbs2/anitomy-ng/releases).
+Download one directly, or install with either:
+
+```sh
+cargo binstall anitomy-ng               # prebuilt binary, no toolchain needed
+cargo install anitomy-ng --features cli # builds from source
+```
+
 ## Usage
 
 Rust:
@@ -85,6 +94,18 @@ All three return an ordered list of elements (position in the filename, kind,
 and value); `ElementKind`/`kind` covers title, episode, season, release group,
 video/audio terms, resolution, checksum, and so on — see
 [`anitomy/src/element.rs`](anitomy/src/element.rs) for the full set.
+
+Command line (`anitomy`) — takes filenames as arguments or reads them from
+stdin (one per line), and prints an aligned table or, with `--json`, an array
+of `{ filename, elements }`:
+
+```sh
+anitomy '[TaigaSubs]_Toradora!_(2008)_-_01v2_-_Tiger_and_Dragon_[1280x720_H.264_FLAC][1234ABCD].mkv'
+ls *.mkv | anitomy --json
+```
+
+Pass `--no-title`, `--no-episode`, etc. to disable individual categories; see
+`anitomy --help`.
 
 ## Layout
 
