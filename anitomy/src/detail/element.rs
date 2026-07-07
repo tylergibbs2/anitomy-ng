@@ -136,10 +136,9 @@ pub(crate) fn build_element_value(
     // canonical `...` (one of the dots may have been the field separator, so
     // the run length isn't preserved).
     let trailing_ellipsis = !keep_delimiters
-        && tokens
-            .get(end..)
-            .map_or(0, |s| s.iter().take_while(|t| first_char(t) == Some('.')).count())
-            >= 3;
+        && tokens.get(end..).map_or(0, |s| {
+            s.iter().take_while(|t| first_char(t) == Some('.')).count()
+        }) >= 3;
 
     let mut value = String::new();
     for token in tokens.get(..end).unwrap_or(&[]) {

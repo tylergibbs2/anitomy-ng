@@ -96,12 +96,13 @@ fn find_title(tokens: &[Token]) -> (usize, usize) {
         if tokens.get(bracket).is_some_and(is_open_bracket_token) {
             let close = find_from(tokens, bracket, is_close_bracket_token);
             let group_like = close < len
-                && tokens.get(bracket + 1..close).is_some_and(|s| {
-                    !s.is_empty() && s.iter().all(|t| !is_identified_token(t))
-                });
+                && tokens
+                    .get(bracket + 1..close)
+                    .is_some_and(|s| !s.is_empty() && s.iter().all(|t| !is_identified_token(t)));
             if group_like {
-                let title_start =
-                    find_from(tokens, close + 1, |t| is_free_token(t) && !is_enclosed_token(t));
+                let title_start = find_from(tokens, close + 1, |t| {
+                    is_free_token(t) && !is_enclosed_token(t)
+                });
                 if title_start < len {
                     first = title_start;
                     last = find_from(tokens, first, is_identified_token);

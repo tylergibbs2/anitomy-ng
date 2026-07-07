@@ -94,11 +94,7 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
         // Only an *unenclosed* bare number reads as an episode: a bracketed
         // one (e.g. `[BD-1080]`) sits with source/quality tags and is a real
         // resolution, so a movie/OVA with no episode keeps it.
-        let unenclosed_at = |pos: usize| {
-            tokens
-                .iter()
-                .any(|t| t.position == pos && !t.is_enclosed)
-        };
+        let unenclosed_at = |pos: usize| tokens.iter().any(|t| t.position == pos && !t.is_enclosed);
         if let Some(e) = elements.iter_mut().find(|e| {
             e.kind == ElementKind::VideoResolution
                 && e.value.chars().all(|c| c.is_ascii_digit())

@@ -87,9 +87,11 @@ pub(super) fn parse_episode_title(tokens: &mut [Token]) -> Option<Element> {
     let content: Vec<usize> = (first..last)
         .filter(|&i| tokens.get(i).is_some_and(is_not_delimiter_token))
         .collect();
-    if content.len() == 1 && content.first().is_some_and(|&i| {
-        tokens.get(i).is_some_and(is_keyword_token)
-    }) {
+    if content.len() == 1
+        && content
+            .first()
+            .is_some_and(|&i| tokens.get(i).is_some_and(is_keyword_token))
+    {
         return None;
     }
 

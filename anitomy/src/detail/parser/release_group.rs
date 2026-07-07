@@ -117,9 +117,7 @@ fn find_release_group(tokens: &[Token]) -> (usize, usize) {
         // all trailing metadata — extension, checksum, bracketed tags are
         // identified or enclosed — to the last *free, unenclosed* token; if a
         // dash precedes it, that is the scene-style `-GROUP` tail.
-        let peeled = find_prev_token(region, region.len(), |t| {
-            is_free_token(t) && !t.is_enclosed
-        });
+        let peeled = find_prev_token(region, region.len(), |t| is_free_token(t) && !t.is_enclosed);
         if let Some(local_idx) = peeled {
             let idx = search_start + local_idx;
             if idx > 0

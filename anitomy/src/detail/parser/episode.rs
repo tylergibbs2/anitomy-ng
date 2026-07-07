@@ -209,7 +209,10 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             && find_prev_token(tokens, idx, is_not_delimiter_token)
                 .and_then(|p| tokens.get(p))
                 .is_some_and(|t| {
-                    is_free_token(t) && !t.is_enclosed && !is_numeric_token(t) && t.keyword.is_none()
+                    is_free_token(t)
+                        && !t.is_enclosed
+                        && !is_numeric_token(t)
+                        && t.keyword.is_none()
                 });
 
         // Always attempted (even if x1/x2 already make this valid) — matches upstream's
