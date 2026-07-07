@@ -1,0 +1,24 @@
+# Criterion speed benchmark for the Rust anime-filename parsers, over the same
+# real-world corpus the conformance matrix uses (anitomy/tests/fixtures/*.json).
+# Its own workspace; built only by scripts/benchmark.py / the benchmark workflow.
+[package]
+name = "anitomy-bench"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anitomy-ng = { path = "../../anitomy" }
+# Rapptz/anitomy-rs, pinned to a branch like the conformance adapter.
+anitomy = { git = "https://github.com/Rapptz/anitomy-rs", branch = "master" }
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bench]]
+name = "parse"
+harness = false
+
+[workspace]

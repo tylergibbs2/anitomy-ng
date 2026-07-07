@@ -26,8 +26,11 @@ anitomy-py/python/anitomy_ng/*.pdb
 /refs.md
 /_ref/
 /*-adapter
-scripts/adapters/rapptz/target/
-scripts/adapters/rapptz/Cargo.lock
+# Build output + lockfiles of the standalone crates under scripts/ (the
+# benchmark/conformance adapters and the criterion bench crate). Each pins an
+# upstream parser by branch, so the lock is regenerated per run, not committed.
+scripts/**/target/
+scripts/**/Cargo.lock
 
 # npm / wasm build outputs
 /dist-npm/

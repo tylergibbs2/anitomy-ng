@@ -71,7 +71,10 @@ def load_corpus() -> dict[str, list[dict]]:
         path = FIXTURES_DIR / f"{suite}.json"
         cases = json.loads(path.read_text(encoding="utf-8"))
         corpus[suite] = [
-            {"input": c["input"], "expected": {k: _normalize(v) for k, v in c["output"].items()}}
+            {
+                "input": c["input"],
+                "expected": {k: _normalize(v) for k, v in c["output"].items()},
+            }
             for c in cases
             if "skip" not in c
         ]
@@ -131,7 +134,11 @@ def _from_aniparse(raw: dict) -> Grouped:
     add("file_extension", raw.get("file_extension"))
     for vr in raw.get("video_resolution") or []:
         if isinstance(vr, dict):
-            width, height, scan = vr.get("video_width"), vr.get("video_height"), vr.get("scan_method")
+            width, height, scan = (
+                vr.get("video_width"),
+                vr.get("video_height"),
+                vr.get("scan_method"),
+            )
             if width and height:
                 add("video_resolution", f"{width}x{height}")
             elif height:
@@ -195,8 +202,12 @@ def python_engine(name: str) -> dict[str, Grouped] | None:
     raise ValueError(f"unknown python engine {name!r}")
 
 
-def external_engine(cmd: list[str], schema: str, inputs: list[str]) -> dict[str, Grouped] | None:
-    """Run an external adapter over the corpus via stdin/stdout JSONL, or None on failure."""
+def external_engine(
+    cmd: list[str], schema: str, inputs: list[str]
+) -> tuple[dict[str, Grouped], float | None] | None:
+    """Run an external adapter over the corpus via stdin/stdout JSONL, returning
+    `(results, per_file_ns)` or None on failure. The adapter may emit a final
+    `{"__per_file_ns__": N}` line with its own native per-file parse timing."""
     try:
         proc = subprocess.run(
             cmd,
@@ -211,16 +222,47 @@ def external_engine(cmd: list[str], schema: str, inputs: list[str]) -> dict[str,
         print(f"  engine command failed: {e}", file=sys.stderr)
         return None
     if proc.returncode != 0:
-        print(f"  engine exited {proc.returncode}: {proc.stderr[-500:]}", file=sys.stderr)
+        print(
+            f"  engine exited {proc.returncode}: {proc.stderr[-500:]}", file=sys.stderr
+        )
         return None
     results: dict[str, Grouped] = {}
+    per_file_ns: float | None = None
     for line in proc.stdout.splitlines():
         line = line.strip()
         if not line:
             continue
         obj = json.loads(line)
+        if "__per_file_ns__" in obj:
+            per_file_ns = float(obj["__per_file_ns__"])
+            continue
         results[obj["input"]] = _to_current(obj["output"], schema)
-    return results
+    return results, per_file_ns
+
+
+def time_python_parse(parse: object, inputs: list[str], passes: int = 200) -> float:
+    """Median per-file parse time (ns) for an in-process Python parser. Parses
+    the whole corpus `passes` times after a warmup; a crashing parse (anitopy
+    raises on some inputs) is caught so it counts as work done, not an abort."""
+    import statistics
+    import time
+
+    def safe(s: str) -> None:
+        try:
+            parse(s)
+        except Exception:  # noqa: BLE001 — a crash is still a parse attempt, timed as such
+            pass
+
+    for _ in range(3):  # warmup
+        for s in inputs:
+            safe(s)
+    passes_ns = []
+    for _ in range(passes):
+        t0 = time.perf_counter_ns()
+        for s in inputs:
+            safe(s)
+        passes_ns.append(time.perf_counter_ns() - t0)
+    return statistics.median(passes_ns) / len(inputs)
 
 
 def _canonical_value(value: str) -> str:
@@ -239,7 +281,9 @@ def _canonical(grouped: Grouped) -> dict[str, list[str]]:
     return {k: [_canonical_value(v) for v in vs] for k, vs in grouped.items()}
 
 
-def score(corpus: dict[str, list[dict]], results: dict[str, Grouped]) -> dict[str, tuple[int, int]]:
+def score(
+    corpus: dict[str, list[dict]], results: dict[str, Grouped]
+) -> dict[str, tuple[int, int]]:
     per_suite: dict[str, tuple[int, int]] = {}
     for suite, cases in corpus.items():
         passed = sum(
@@ -278,36 +322,142 @@ def markdown_table(scores: dict[str, dict[str, tuple[int, int]]], corpus) -> str
     return "\n".join(lines) + "\n"
 
 
+def run_rust_bench(n_files: int) -> dict[str, float]:
+    """Per-file parse time (ns) for the Rust parsers, measured by Criterion via
+    `cargo bench` in scripts/bench (same corpus). Empty if cargo or the crate
+    is unavailable. Criterion's mean is ns per full-corpus pass, so divide by
+    the file count."""
+    bench_dir = ROOT / "scripts" / "bench"
+    if not (bench_dir / "Cargo.toml").exists():
+        return {}
+    try:
+        proc = subprocess.run(
+            ["cargo", "bench", "--quiet"],
+            cwd=bench_dir,
+            capture_output=True,
+            text=True,
+            timeout=1200,
+        )
+    except (OSError, subprocess.TimeoutExpired) as e:
+        print(f"  cargo bench unavailable: {e}", file=sys.stderr)
+        return {}
+    if proc.returncode != 0:
+        print(
+            f"  cargo bench exited {proc.returncode}: {proc.stderr[-500:]}",
+            file=sys.stderr,
+        )
+        return {}
+    out: dict[str, float] = {}
+    for label in ("anitomy_ng", "rapptz"):
+        est = (
+            bench_dir
+            / "target"
+            / "criterion"
+            / "parse"
+            / label
+            / "new"
+            / "estimates.json"
+        )
+        if est.exists():
+            out[label] = json.loads(est.read_text())["mean"]["point_estimate"] / n_files
+    return out
+
+
+# Cohort display order. Timings live in {cohort: {parser: per_file_ns}}.
+COHORT_ORDER = ("Rust", "Python", "JS (Node)", "C++", "C#")
+
+
+def speed_tables(timings: dict[str, dict[str, float]]) -> str:
+    """One per-file-speed table per runtime cohort. Comparisons are only made
+    within a cohort — across runtimes the number would mostly measure the
+    language, not the parser — and anitomy_ng appears in each cohort in its form
+    for that runtime (native Rust, PyO3 binding, wasm)."""
+    if not any(timings.values()):
+        return ""
+    out = [
+        "## Speed",
+        "",
+        "Per-file parse time, grouped by runtime so each table is a fair,",
+        "same-runtime comparison; anitomy_ng appears in each in its form for that",
+        "runtime. Rust is Criterion's mean; Python/JS/C++ are the median per-file",
+        "time over the corpus in that runtime. Lower is better.",
+        "",
+    ]
+    for cohort in COHORT_ORDER:
+        libs = timings.get(cohort)
+        if not libs:
+            continue
+        out += [f"### {cohort}", "", "| Parser | Per file |", "|---|---|"]
+        for lib, ns in sorted(libs.items(), key=lambda kv: kv[1]):
+            cell = f"{ns / 1000:.2f} µs" if ns >= 1000 else f"{ns:.0f} ns"
+            out.append(f"| {lib} | {cell} |")
+        out.append("")
+    return "\n".join(out) + "\n"
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Cross-implementation conformance benchmark.")
-    parser.add_argument("--engines-config", type=Path, help="JSON describing external engines")
-    parser.add_argument("--out", type=Path, help="write the Markdown table here (also to stdout)")
+    parser = argparse.ArgumentParser(
+        description="Cross-implementation conformance benchmark."
+    )
+    parser.add_argument(
+        "--engines-config", type=Path, help="JSON describing external engines"
+    )
+    parser.add_argument(
+        "--out", type=Path, help="write the Markdown table here (also to stdout)"
+    )
+    parser.add_argument(
+        "--speed",
+        action="store_true",
+        help="also measure per-file parse speed (Python in-process + cargo bench for Rust)",
+    )
     args = parser.parse_args()
 
     corpus = load_corpus()
     inputs = all_inputs(corpus)
     scores: dict[str, dict[str, tuple[int, int]]] = {}
+    # {cohort: {parser: per_file_ns}} — comparisons only made within a cohort.
+    timings: dict[str, dict[str, float]] = {c: {} for c in COHORT_ORDER}
     skipped: list[str] = []
 
     for name in ("anitomy_ng", "anitopy", "aniparse"):
         results = python_engine(name)
         if results is None:
             skipped.append(name)
-        else:
-            scores[name] = score(corpus, results)
+            continue
+        scores[name] = score(corpus, results)
+        # Every Python-callable parser belongs to the Python cohort — including
+        # anitomy_ng's PyO3 binding (its per-call Python-object construction is
+        # the real cost a Python user pays, so it is fair to time here). The
+        # native Rust speed lands in the Rust cohort via cargo bench below.
+        if args.speed:
+            import importlib
+
+            timings["Python"][name] = time_python_parse(
+                importlib.import_module(name).parse, inputs
+            )
 
     if args.engines_config:
         for cfg in json.loads(args.engines_config.read_text(encoding="utf-8")):
             print(f"running external engine: {cfg['name']}", file=sys.stderr)
-            results = external_engine(cfg["cmd"], cfg.get("schema", "current"), inputs)
+            outcome = external_engine(cfg["cmd"], cfg.get("schema", "current"), inputs)
             # `label` is the display/column name; `name` stays the internal id.
             label = cfg.get("label", cfg["name"])
-            if results is None:
+            if outcome is None:
                 skipped.append(label)
-            else:
-                scores[label] = score(corpus, results)
+                continue
+            results, per_file_ns = outcome
+            scores[label] = score(corpus, results)
+            # An adapter that self-timed (emitted `__per_file_ns__`) and declares
+            # a `cohort` contributes to that cohort's speed table.
+            if args.speed and per_file_ns is not None and cfg.get("cohort") in timings:
+                timings[cfg["cohort"]][label] = per_file_ns
+
+    if args.speed:
+        timings["Rust"].update(run_rust_bench(len(inputs)))
 
     table = markdown_table(scores, corpus)
+    if speed := speed_tables(timings):
+        table += "\n" + speed
     if skipped:
         table += f"\n_Skipped (unavailable): {', '.join(skipped)}._\n"
 

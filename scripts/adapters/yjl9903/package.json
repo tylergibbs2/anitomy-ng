@@ -1,0 +1,9 @@
+{
+  "name": "yjl9903-anitomy-adapter",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark adapter for yjl9903/anitomy. Built by .github/workflows/benchmark.yml (npm install here). Not part of any workspace.",
+  "dependencies": {
+    "anitomy": "0.0.35"
+  }
+}
