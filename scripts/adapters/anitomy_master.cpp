@@ -13,6 +13,8 @@
 // so its sources are compiled in:
 //   g++ -std=c++14 -O2 -I<anitomy> anitomy_master.cpp <anitomy>/anitomy/*.cpp -o adapter
 
+#include <algorithm>
+#include <chrono>
 #include <codecvt>
 #include <cstdio>
 #include <iostream>
@@ -86,10 +88,18 @@ static void json_escape(const std::string& s, std::string& out) {
 }
 
 int main() {
+  std::vector<std::string> inputs;
+  std::vector<std::wstring> winputs;
   std::string line;
   while (std::getline(std::cin, line)) {
+    if (line.empty()) continue;
+    inputs.push_back(line);
+    winputs.push_back(from_utf8(line));
+  }
+
+  for (size_t idx = 0; idx < inputs.size(); ++idx) {
     anitomy::Anitomy parser;
-    parser.Parse(from_utf8(line));
+    parser.Parse(winputs[idx]);
 
     std::map<std::string, std::vector<std::string>> grouped;
     for (const auto& element : parser.elements()) {
@@ -100,7 +110,7 @@ int main() {
     }
 
     std::string out = "{\"input\":\"";
-    json_escape(line, out);
+    json_escape(inputs[idx], out);
     out += "\",\"output\":{";
     bool first = true;
     for (const auto& kv : grouped) {
@@ -120,5 +130,34 @@ int main() {
     out += "}}";
     std::cout << out << "\n";
   }
+
+  // Self-timed median per-file parse time for the C++ speed cohort. The
+  // UTF-8 -> wstring conversion is done once above (not parse work); each
+  // parse gets a fresh Anitomy, as a normal caller would.
+  auto parse_all = [&winputs]() {
+    std::size_t acc = 0;
+    for (const auto& w : winputs) {
+      anitomy::Anitomy parser;
+      parser.Parse(w);
+      acc += parser.elements().size();
+    }
+    return acc;
+  };
+  volatile std::size_t sink = 0;
+  for (int w = 0; w < 5; ++w) sink += parse_all();
+  std::vector<double> pass_ns;
+  constexpr int kPasses = 200;
+  for (int p = 0; p < kPasses; ++p) {
+    const auto t0 = std::chrono::steady_clock::now();
+    sink += parse_all();
+    const auto t1 = std::chrono::steady_clock::now();
+    pass_ns.push_back(std::chrono::duration<double, std::nano>(t1 - t0).count());
+  }
+  (void)sink;
+  std::sort(pass_ns.begin(), pass_ns.end());
+  const double per_file_ns = pass_ns[pass_ns.size() / 2] / static_cast<double>(inputs.size());
+  char buf[64];
+  std::snprintf(buf, sizeof buf, "{\"__per_file_ns__\":%.3f}\n", per_file_ns);
+  std::cout << buf;
   return 0;
 }

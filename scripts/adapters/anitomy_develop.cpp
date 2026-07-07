@@ -11,6 +11,8 @@
 // Build (see .github/workflows/benchmark.yml):
 //   g++-14 -std=c++23 -O2 -I<anitomy>/include anitomy_develop.cpp -o adapter
 
+#include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 #include <map>
@@ -68,15 +70,20 @@ static void json_escape(const std::string& s, std::string& out) {
 }
 
 int main() {
+  std::vector<std::string> inputs;
   std::string line;
   while (std::getline(std::cin, line)) {
+    if (!line.empty()) inputs.push_back(line);
+  }
+
+  for (const auto& input : inputs) {
     std::map<std::string, std::vector<std::string>> grouped;
-    for (const auto& el : anitomy::parse(line)) {
+    for (const auto& el : anitomy::parse(input)) {
       grouped[kind_name(el.kind)].push_back(el.value);
     }
 
     std::string out = "{\"input\":\"";
-    json_escape(line, out);
+    json_escape(input, out);
     out += "\",\"output\":{";
     bool first = true;
     for (const auto& [kind, values] : grouped) {
@@ -96,5 +103,34 @@ int main() {
     out += "}}";
     std::cout << out << "\n";
   }
+
+  // Self-timed median per-file parse time (parse only), for the C++ speed
+  // cohort. Warm up, then time repeated full-corpus passes; the accumulator
+  // keeps the compiler from optimizing the parse away.
+  auto parse_all = [&inputs]() {
+    std::size_t acc = 0;
+    for (const auto& input : inputs) {
+      for (const auto& el : anitomy::parse(input)) {
+        acc += el.value.size();
+      }
+    }
+    return acc;
+  };
+  volatile std::size_t sink = 0;
+  for (int w = 0; w < 5; ++w) sink += parse_all();
+  std::vector<double> pass_ns;
+  constexpr int kPasses = 200;
+  for (int p = 0; p < kPasses; ++p) {
+    const auto t0 = std::chrono::steady_clock::now();
+    sink += parse_all();
+    const auto t1 = std::chrono::steady_clock::now();
+    pass_ns.push_back(std::chrono::duration<double, std::nano>(t1 - t0).count());
+  }
+  (void)sink;
+  std::sort(pass_ns.begin(), pass_ns.end());
+  const double per_file_ns = pass_ns[pass_ns.size() / 2] / static_cast<double>(inputs.size());
+  char buf[64];
+  std::snprintf(buf, sizeof buf, "{\"__per_file_ns__\":%.3f}\n", per_file_ns);
+  std::cout << buf;
   return 0;
 }
