@@ -29,11 +29,39 @@ fn first_char(token: &Token) -> Option<char> {
     token.value.chars().next()
 }
 
+/// Whether `_` acts as a word separator in this file, i.e. it is at least as
+/// common a delimiter as the space. When space is the more common delimiter,
+/// an `_` inside an element is a literal character rather than a separator
+/// (e.g. `Data_01_Login`, `NieR-Automata Ver1_1a`) and must not be folded to
+/// a space; when `_` dominates (e.g. `bodlerov_&_torrents_ru`,
+/// `Howl's_Moving_Castle`) it is the separator and folds like any other.
+pub(crate) fn underscore_is_separator(tokens: &[Token]) -> bool {
+    let mut spaces = 0usize;
+    let mut underscores = 0usize;
+    for ch in tokens
+        .iter()
+        .filter(|t| is_delimiter_token(t))
+        .filter_map(first_char)
+    {
+        if is_space(ch) {
+            spaces += 1;
+        } else if ch == '_' {
+            underscores += 1;
+        }
+    }
+    underscores >= spaces
+}
+
 /// Joins `tokens` into a single string. Trailing delimiters are trimmed
 /// (unless `keep_delimiters`), and delimiters within the run are turned
 /// into spaces per upstream's heuristic (based on which delimiter
 /// characters are actually used in this particular run of tokens).
-pub(crate) fn build_element_value(tokens: &[Token], keep_delimiters: bool) -> String {
+/// `file_has_space` is the whole-file signal from `file_uses_space_delimiter`.
+pub(crate) fn build_element_value(
+    tokens: &[Token],
+    keep_delimiters: bool,
+    underscore_separator: bool,
+) -> String {
     let delimiters: HashSet<char> = tokens
         .iter()
         .filter(|t| is_delimiter_token(t))
@@ -53,8 +81,11 @@ pub(crate) fn build_element_value(tokens: &[Token], keep_delimiters: bool) -> St
         if ch == ',' || ch == '&' || ch == '~' {
             return false;
         }
-        if is_space(ch) || ch == '_' {
+        if is_space(ch) {
             return true;
+        }
+        if ch == '_' {
+            return underscore_separator;
         }
         if has_spaces || has_underscores {
             return false;

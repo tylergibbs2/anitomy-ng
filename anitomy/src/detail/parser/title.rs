@@ -5,7 +5,7 @@
 //! Port of `include/anitomy/detail/parser/title.hpp`.
 
 use crate::detail::container::{find_from, find_prev_token, mark};
-use crate::detail::element::build_element_value;
+use crate::detail::element::{build_element_value, underscore_is_separator};
 use crate::detail::token::{
     is_close_bracket_token, is_enclosed_token, is_free_token, is_identified_token,
     is_not_delimiter_token, is_open_bracket_token, Token,
@@ -140,7 +140,8 @@ pub(super) fn parse_title(tokens: &mut [Token]) -> Option<Element> {
         return None;
     }
 
-    let value = build_element_value(tokens.get(first..last)?, false);
+    let value =
+        build_element_value(tokens.get(first..last)?, false, underscore_is_separator(tokens));
     if value.is_empty() {
         return None;
     }
