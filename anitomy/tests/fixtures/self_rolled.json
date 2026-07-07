@@ -215,5 +215,70 @@
       "season": ["4", "6"],
       "video_resolution": "1080p"
     }
+  },
+  {
+    "input": "[neoDESU] Miss Kobayashi's Dragon Maid [Season 2 + Movie] [BD 1080p HEVC AV1 OPUS AAC] [Dual Audio] Kobayashi-san Chi no Maid Dragon",
+    "source": "nyaa.si",
+    "note": "Bundle manifest: `[Season 2 + Movie]` packages a whole season plus a movie (verified against the torrent's file list: a `Season 2` folder of S02E01-E12 and a `Specials` folder). The `+` joining season/type content is the tell, so detail/parser.rs's detect_content_bundle flags `release_information: Batch`; the season and type are kept as the batch's contents (matching how upstream labels the SAO franchise bundle).",
+    "output": {
+      "release_group": "neoDESU",
+      "title": "Miss Kobayashi's Dragon Maid",
+      "season": "2",
+      "type": "Movie",
+      "release_information": "Batch",
+      "source": "BD",
+      "video_resolution": "1080p",
+      "video_term": ["HEVC", "AV1"],
+      "audio_term": ["OPUS", "AAC", "Dual Audio"]
+    }
+  },
+  {
+    "input": "[nekotan] The Fruit of Grisaia S00E01-E06 (BD Remux 1080p x264 8-bit FLAC) | Grisaia no Kajitsu Specials",
+    "source": "nyaa.si",
+    "note": "Season 0 (specials) with an `E01-E06` episode range and `Remux` release information.",
+    "output": {
+      "release_group": "nekotan",
+      "title": "The Fruit of Grisaia",
+      "season": "00",
+      "episode": ["01", "06"],
+      "type": "Specials",
+      "source": "BD",
+      "release_information": "Remux",
+      "video_resolution": "1080p",
+      "video_term": ["x264", "8-bit"],
+      "audio_term": "FLAC"
+    }
+  },
+  {
+    "input": "[Gecko] Nonhuman - S03E23 (非人哉; Fei Ren Zai 3rd Season Part 2) [BILI.WEB-DL 1080P AVC, AAC, SUB][D402DAFE]",
+    "source": "nyaa.si",
+    "note": "SxxExx plus a `Part 2` recovered from the CJK/romaji parenthetical; split `BILI.WEB-DL` source and trailing checksum.",
+    "output": {
+      "release_group": "Gecko",
+      "title": "Nonhuman",
+      "season": "3",
+      "episode": "23",
+      "part": "2",
+      "source": ["BILI", "WEB-DL"],
+      "video_resolution": "1080P",
+      "video_term": "AVC",
+      "audio_term": "AAC",
+      "subtitles": "SUB",
+      "file_checksum": "D402DAFE"
+    }
+  },
+  {
+    "input": "[WonderhoyRips] BLEACH: Thousand-Year Blood War - The Calamity [E41 E42 E43] [720p SCR][H.264][AAC][EN Hardsub]",
+    "source": "nyaa.si",
+    "note": "Explicit multi-episode batch `[E41 E42 E43]` (three episode values); colon kept in the title.",
+    "output": {
+      "release_group": "WonderhoyRips",
+      "title": "BLEACH: Thousand-Year Blood War - The Calamity",
+      "episode": ["41", "42", "43"],
+      "video_resolution": "720p",
+      "video_term": "H.264",
+      "audio_term": "AAC",
+      "subtitles": "Hardsub"
+    }
   }
 ]

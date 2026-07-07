@@ -112,8 +112,71 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
     dedupe_zero_padded(&mut elements, ElementKind::Episode);
     dedupe_zero_padded(&mut elements, ElementKind::Season);
 
+    detect_content_bundle(&tokens, &mut elements);
+
     elements.sort_by_key(|e| e.position);
     elements
+}
+
+/// Content-bundle detection. An enclosed `+` joining content descriptors —
+/// `[Season 2 + Movie]`, `(S01+S02+S03+S04+...+Specials+OVAs)` — is a *bundle
+/// manifest*: the torrent packages multiple works (a season plus a movie, or a
+/// whole franchise), not a single release. The `+` is the tell; no ordinary
+/// filename composes seasons/types with it. The extracted season(s) and
+/// type(s) are the batch's *contents*, which is fine to keep — the missing
+/// piece is the batch nature itself, so flag it `release_information: Batch`
+/// (matching how upstream labels these). Audio/video runs like `5.1+2.0` or
+/// `x264+OGG` are excluded: both sides must be season/episode/type content.
+fn detect_content_bundle(tokens: &[Token], elements: &mut Vec<Element>) {
+    use super::token::{is_delimiter_token, is_open_bracket_token};
+
+    let is_content = |kind: Option<ElementKind>| {
+        matches!(
+            kind,
+            Some(ElementKind::Season) | Some(ElementKind::Episode) | Some(ElementKind::Type)
+        )
+    };
+    // The nearest non-delimiter token to one side of `i`, bounded by the
+    // enclosing bracket, is content.
+    let content_side = |range: &mut dyn Iterator<Item = usize>| {
+        for j in range {
+            match tokens.get(j) {
+                Some(t) if is_open_bracket_token(t) || is_delimiter_token(t) => {
+                    if is_open_bracket_token(t) {
+                        return false;
+                    }
+                }
+                Some(t) => return is_content(t.element_kind),
+                None => return false,
+            }
+        }
+        false
+    };
+
+    let mut batch_position: Option<usize> = None;
+    for (i, plus) in tokens.iter().enumerate() {
+        if !(is_delimiter_token(plus) && plus.value == "+" && plus.is_enclosed) {
+            continue;
+        }
+        if content_side(&mut (0..i).rev()) && content_side(&mut (i + 1..tokens.len())) {
+            batch_position = Some(plus.position);
+            break;
+        }
+    }
+
+    let Some(position) = batch_position else {
+        return;
+    };
+    let has_batch = elements.iter().any(|e| {
+        e.kind == ElementKind::ReleaseInformation && e.value.eq_ignore_ascii_case("Batch")
+    });
+    if !has_batch {
+        elements.push(Element {
+            kind: ElementKind::ReleaseInformation,
+            value: "Batch".to_string(),
+            position,
+        });
+    }
 }
 
 /// The integer a pure-decimal element value denotes, ignoring leading zeros,
