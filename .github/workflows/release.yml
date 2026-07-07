@@ -56,10 +56,20 @@ jobs:
     permissions:
       id-token: write # mint the OIDC token PyPI Trusted Publishing exchanges
     steps:
+      # Download ONLY the Python artifacts. Without a pattern this grabbed every
+      # artifact in the run — including the cli-<target> binary tarballs — and
+      # twine rejected `anitomy-<ver>-<target>.tar.gz` as a malformed sdist
+      # ("too many top-level members"). Wheels and the sdist have distinct
+      # artifact-name prefixes, so they need two filtered downloads.
       - uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true # flatten every wheels-* + sdist artifact into dist/
+          pattern: wheels-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          name: sdist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
