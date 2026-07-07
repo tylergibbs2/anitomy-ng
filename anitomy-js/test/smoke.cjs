@@ -37,4 +37,11 @@ assert(
   "parse_episode:false should drop episode elements",
 );
 
+// Non-ASCII round-trips intact through the JS<->wasm UTF-8 boundary.
+const unicode = parse("[グループ] 進撃の巨人 - 05 [1080p].mkv");
+assert(
+  unicode.some((e) => e.kind === "episode" && e.value === "05"),
+  "unicode filename should still yield episode 05",
+);
+
 console.log(`smoke test passed (${elements.length} elements parsed)`);

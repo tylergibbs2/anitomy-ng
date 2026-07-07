@@ -1,9 +1,10 @@
 name: WASM
 
 # Guards the npm/WebAssembly build path: that the binding still compiles to
-# wasm (catches wasm-bindgen/tsify version drift) and that parse() works at
-# runtime. Path-filtered so it only runs when the core crate, the binding, its
-# build script, or the dependency lock change.
+# wasm (catches wasm-bindgen/tsify version drift), that parse() works at
+# runtime (smoke.cjs), and that the generated TypeScript types still match the
+# intended API (tsc). Path-filtered so it only runs when the core crate, the
+# binding, its build script, or the dependency lock change.
 on:
   push:
     branches: [main]
@@ -33,4 +34,11 @@ jobs:
         with:
           node-version: "20" # >=18: wasm-bindgen output uses reference types
       - run: bash scripts/build-npm.sh
+      # Runtime check (Node/CJS target): parse() returns the expected elements.
       - run: node anitomy-js/test/smoke.cjs
+      # Type check: the tsify/wasm-bindgen-generated .d.ts still matches the
+      # intended TypeScript API (guards the surface web/bundler consumers use).
+      - run: >
+          npx -y -p typescript@5 tsc --noEmit --strict --skipLibCheck
+          --moduleResolution bundler --module esnext --target es2022
+          anitomy-js/test/types.test-d.ts
