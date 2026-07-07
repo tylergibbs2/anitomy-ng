@@ -163,6 +163,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
       - name: Build
+        shell: bash
         run: cargo build --release --locked --features cli --bin anitomy --target "$TARGET"
       - name: Archive
         shell: bash
