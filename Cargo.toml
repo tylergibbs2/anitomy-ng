@@ -6,7 +6,7 @@ members = ["anitomy", "anitomy-py", "anitomy-js", "anitomy-c"]
 exclude = ["scripts/adapters/rapptz"]
 
 [workspace.package]
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 license = "MPL-2.0"
 repository = "https://github.com/tylergibbs2/anitomy-ng"
