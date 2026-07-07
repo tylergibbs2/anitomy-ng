@@ -30,6 +30,9 @@ use crate::element::{Element, ElementKind};
 fn find_release_group(tokens: &[Token]) -> (usize, usize) {
     let len = tokens.len();
     let mut search_start = 0usize;
+    // All valid enclosed candidates, in order. Upstream returns the first; we
+    // collect them so the trailing-bracket convention below can pick the last.
+    let mut candidates: Vec<(usize, usize)> = Vec::new();
 
     loop {
         // Find the first enclosed unidentified range, e.g. `[Group] Title - Episode [Info]`.
@@ -63,7 +66,31 @@ fn find_release_group(tokens: &[Token]) -> (usize, usize) {
                 search_start = last;
                 continue;
             }
-            return (first, last);
+            candidates.push((first, last));
+            search_start = last;
+            continue;
+        }
+
+        // Enclosed candidates exhausted. When the title is unenclosed and sits
+        // before the first candidate bracket (`Title [x] [y] [Group]`, e.g.
+        // `Noein_[01_of_24]_[ru_jp]_[bodlerov_&_torrents_ru]`), the trailing
+        // brackets are metadata and the group is the last one — not the first
+        // unidentified bracket upstream would greedily take. In the standard
+        // `[Group] Title` layout the group precedes the title, so this leaves
+        // it as the first candidate.
+        if let Some(&(cf, cl)) = candidates.first() {
+            let title_precedes = tokens.get(cf).is_some_and(|c| {
+                tokens.iter().any(|t| {
+                    t.element_kind == Some(ElementKind::Title)
+                        && !t.is_enclosed
+                        && t.position < c.position
+                })
+            });
+            return if title_precedes {
+                candidates.last().copied().unwrap_or((cf, cl))
+            } else {
+                (cf, cl)
+            };
         }
 
         // Fall back to the last token before file extension, e.g. `Title.Episode.Info-Group.mkv`.

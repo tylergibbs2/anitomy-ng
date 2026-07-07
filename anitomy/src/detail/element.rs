@@ -70,22 +70,35 @@ pub(crate) fn build_element_value(
     let has_single_delimiter = delimiters.len() == 1;
     let has_spaces = delimiters.iter().copied().any(is_space);
     let has_underscores = delimiters.contains(&'_');
+    // A `&` in a kept-delimiter run (a release group) marks a collaboration of
+    // teams (`A_&_B_&_C`), where the `_` are word separators that should fold
+    // to spaces. Without a `&`, an `_` in a group is part of one stylized name
+    // (`Black_Sheep`, `Seto_Otaku`) and stays literal.
+    let has_ampersand = delimiters.contains(&'&');
 
     let is_transformable_delimiter = |token: &Token| -> bool {
-        if keep_delimiters || is_not_delimiter_token(token) {
+        if is_not_delimiter_token(token) {
             return false;
         }
         let Some(ch) = first_char(token) else {
             return false;
         };
+        // The file's `_` separator folds to a space even when delimiters are
+        // otherwise kept (release groups) — but only in a collaboration name
+        // (`bodlerov_&_torrents_ru` -> `bodlerov & torrents ru`); a lone
+        // stylized group name keeps it (`Black_Sheep`), as does a dash in
+        // `UTW-THORA`.
+        if ch == '_' {
+            return underscore_separator && (!keep_delimiters || has_ampersand);
+        }
+        if keep_delimiters {
+            return false;
+        }
         if ch == ',' || ch == '&' || ch == '~' {
             return false;
         }
         if is_space(ch) {
             return true;
-        }
-        if ch == '_' {
-            return underscore_separator;
         }
         if has_spaces || has_underscores {
             return false;
