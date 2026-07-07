@@ -230,13 +230,17 @@ jobs:
             dist/anitomy-*.tar.gz
             dist/anitomy-*.zip
       - name: Create or update the GitHub Release
+        # No repo checkout in this job, so gh can't infer the target repo from a
+        # git remote (it would fail with "fatal: not a git repository"). Pass it
+        # explicitly via --repo so gh uses the API directly.
         run: |
           set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             # Re-run: refresh assets on the existing release instead of failing.
-            gh release upload "$TAG" dist/* --clobber
+            gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "$TAG" \
               --generate-notes \
