@@ -32,8 +32,3 @@ pub(crate) fn is_close_bracket(ch: char) -> bool {
             | '\u{FF5D}'
     )
 }
-
-#[allow(dead_code)]
-pub(crate) fn is_bracket(ch: char) -> bool {
-    is_open_bracket(ch) || is_close_bracket(ch)
-}

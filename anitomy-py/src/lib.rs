@@ -26,7 +26,7 @@ use pyo3::prelude::*;
 
 /// Mirrors `anitomy_ng::Options`. Re-exported directly as
 /// `anitomy_ng.Options`, since it's a flat struct of bools.
-#[pyclass(get_all, set_all)]
+#[pyclass(get_all, set_all, from_py_object)]
 #[derive(Debug, Clone, Copy)]
 pub struct Options {
     pub parse_episode: bool,

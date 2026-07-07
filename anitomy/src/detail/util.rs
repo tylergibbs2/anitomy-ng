@@ -2,12 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-//! Port of `include/anitomy/detail/util.hpp`. The small pure helpers are
-//! complete; `read_file` is CLI-only (not part of the library) and is
-//! intentionally omitted, and `find_all_if` is a generic-iterator algorithm
-//! better expressed as `Iterator` combinators at each call site in Rust.
+//! Port of `include/anitomy/detail/util.hpp`, limited to the helpers the
+//! parser actually uses. Thin wrappers over `std` (`is_alpha`, `is_digit`,
+//! `is_xdigit`, `to_float`, `to_lower`) are omitted in favour of calling the
+//! standard library directly; `read_file` is CLI-only (not part of the
+//! library) and is intentionally omitted; and `find_all_if` is a
+//! generic-iterator algorithm better expressed as `Iterator` combinators at
+//! each call site in Rust.
 
-#[allow(dead_code)]
 pub(crate) fn from_ordinal_number(input: &str) -> Option<&'static str> {
     Some(match input {
         "1st" | "First" => "1",
@@ -23,7 +25,6 @@ pub(crate) fn from_ordinal_number(input: &str) -> Option<&'static str> {
     })
 }
 
-#[allow(dead_code)]
 pub(crate) fn from_roman_number(input: &str) -> Option<&'static str> {
     Some(match input {
         "II" => "2",
@@ -33,39 +34,12 @@ pub(crate) fn from_roman_number(input: &str) -> Option<&'static str> {
     })
 }
 
-#[allow(dead_code)]
-pub(crate) fn is_alpha(ch: char) -> bool {
-    ch.is_ascii_alphabetic()
-}
-
-#[allow(dead_code)]
-pub(crate) fn is_digit(ch: char) -> bool {
-    ch.is_ascii_digit()
-}
-
-#[allow(dead_code)]
-pub(crate) fn is_xdigit(ch: char) -> bool {
-    ch.is_ascii_hexdigit()
-}
-
-#[allow(dead_code)]
 pub(crate) fn to_int(str: &str) -> i32 {
     str.parse().unwrap_or(0)
 }
 
-#[allow(dead_code)]
-pub(crate) fn to_float(str: &str) -> f32 {
-    str.parse().unwrap_or(0.0)
-}
-
-#[allow(dead_code)]
-pub(crate) fn to_lower(ch: char) -> char {
-    ch.to_ascii_lowercase()
-}
-
 /// ASCII case-insensitive comparison (matches upstream `equal`, which only
 /// folds `A`-`Z`, not full Unicode case folding).
-#[allow(dead_code)]
 pub(crate) fn equal_ignore_ascii_case(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }

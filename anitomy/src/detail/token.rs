@@ -33,62 +33,42 @@ pub(crate) struct Token {
     pub is_number: bool,
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_identified_token(token: &Token) -> bool {
     token.element_kind.is_some()
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_free_token(token: &Token) -> bool {
     matches!(token.kind, TokenKind::Text | TokenKind::Keyword) && token.element_kind.is_none()
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_open_bracket_token(token: &Token) -> bool {
     token.kind == TokenKind::OpenBracket
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_close_bracket_token(token: &Token) -> bool {
     token.kind == TokenKind::CloseBracket
 }
 
-#[allow(dead_code)]
-pub(crate) fn is_bracket_token(token: &Token) -> bool {
-    is_open_bracket_token(token) || is_close_bracket_token(token)
-}
-
-#[allow(dead_code)]
 pub(crate) fn is_dash_token(token: &Token) -> bool {
     token.kind == TokenKind::Delimiter && token.value.chars().next().is_some_and(is_dash)
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_delimiter_token(token: &Token) -> bool {
     token.kind == TokenKind::Delimiter
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_not_delimiter_token(token: &Token) -> bool {
     token.kind != TokenKind::Delimiter
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_keyword_token(token: &Token) -> bool {
     token.kind == TokenKind::Keyword
 }
 
-#[allow(dead_code)]
-pub(crate) fn is_text_token(token: &Token) -> bool {
-    token.kind == TokenKind::Text
-}
-
-#[allow(dead_code)]
 pub(crate) fn is_enclosed_token(token: &Token) -> bool {
     token.is_enclosed
 }
 
-#[allow(dead_code)]
 pub(crate) fn is_numeric_token(token: &Token) -> bool {
     token.is_number
 }
