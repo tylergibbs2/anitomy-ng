@@ -8,8 +8,12 @@
 // Kinds are emitted as current-schema snake_case names (schema=current), which
 // already match this branch's ElementKind. See scripts/benchmark.py.
 //
-// Build (see .github/workflows/benchmark.yml):
-//   g++-14 -std=c++23 -O2 -I<anitomy>/include anitomy_develop.cpp -o adapter
+// Toolchain: anitomy@develop uses C++23 *library* features that only a recent
+// libstdc++ ships — std::ranges::starts_with (GCC 15+) and floating-point
+// std::from_chars (never implemented in libc++). So it needs GCC >= 15 with
+// libstdc++; it will NOT build with GCC <= 14 or with libc++ (the macOS/clang
+// default). Build (see .github/workflows/benchmark.yml):
+//   g++-15 -std=c++23 -O2 -I<anitomy>/include anitomy_develop.cpp -o adapter
 
 #include <algorithm>
 #include <chrono>
@@ -18,6 +22,15 @@
 #include <map>
 #include <string>
 #include <vector>
+
+// Fail fast with an explanation instead of a confusing error deep inside
+// anitomy's headers (a "call to deleted function 'from_chars'" under libc++, or
+// "'starts_with' is not a member of 'std::ranges'" under GCC <= 14).
+#if defined(_LIBCPP_VERSION)
+#error "anitomy@develop does not build against libc++ (no floating-point std::from_chars). Use GCC >= 15 with libstdc++ (see .github/workflows/benchmark.yml)."
+#elif defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 15
+#error "anitomy@develop needs libstdc++ from GCC >= 15 (for std::ranges::starts_with). See .github/workflows/benchmark.yml."
+#endif
 
 #include <anitomy.hpp>
 
