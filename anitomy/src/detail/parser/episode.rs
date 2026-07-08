@@ -241,14 +241,29 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
 
         let mut m1 = m1;
         let fraction = trailing_fraction(tokens, idx);
+        // When the token already carried a version marker (`E06v1` + `.5`), the
+        // fraction belongs to the *version* (`v1.5`), not the episode number:
+        // gluing it onto the episode fabricates a half-episode (`06.5`) that
+        // isn't there. Extend the version instead; only a versionless match
+        // (`EP07` + `.5`) is a genuine fractional episode.
+        let fraction_on_version = fraction.is_some() && m1.version.is_some();
         if fraction.is_some() {
-            m1.episode.0.push_str(".5");
+            if let Some(version) = m1.version.as_mut() {
+                version.0.push_str(".5");
+            } else {
+                m1.episode.0.push_str(".5");
+            }
         }
 
         apply_episode_match(tokens, idx, &m1, elements);
         if let Some((dot_idx, five_idx)) = fraction {
-            mark(tokens, dot_idx, ElementKind::Episode);
-            mark(tokens, five_idx, ElementKind::Episode);
+            let kind = if fraction_on_version {
+                ElementKind::ReleaseVersion
+            } else {
+                ElementKind::Episode
+            };
+            mark(tokens, dot_idx, kind);
+            mark(tokens, five_idx, kind);
         }
         if let Some((after_idx, m2)) = range_next {
             apply_episode_match(tokens, after_idx, &m2, elements);

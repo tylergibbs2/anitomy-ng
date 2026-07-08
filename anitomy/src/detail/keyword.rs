@@ -299,6 +299,13 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("EngSub", 0),
             ("EngSubs", 0),
             ("GerSub", 0),
+            // Combined dual-language sub tags common in German fansub releases.
+            // Without these the tag falls through to release_group (e.g.
+            // "[...][GerEngSub][Web-DL]" mislabeled the group).
+            ("GerEngSub", 0),
+            ("GerEngSubs", 0),
+            ("EngGerSub", 0),
+            ("EngGerSubs", 0),
         ]),
 
         // Type

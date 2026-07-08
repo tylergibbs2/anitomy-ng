@@ -292,5 +292,121 @@
       "audio_term": "AAC",
       "subtitles": "Hardsub"
     }
+  },
+  {
+    "input": "Cardfight!! Vanguard - will+Dress",
+    "source": "erengy/anitomy",
+    "note": "No episode or metadata present: the whole string is the title. `!!`, the ` - ` word separator, and the `+` are all kept rather than treated as delimiters that split off a phantom episode/episode_title.",
+    "output": {
+      "title": "Cardfight!! Vanguard - will+Dress"
+    }
+  },
+  {
+    "input": "Mahoutsukai Reimeiki E06v1.5 [1080p][AAC][JapDub][GerEngSub][Web-DL].mkv",
+    "source": "erengy/anitomy",
+    "note": "`E06v1.5` is episode 6 at release version 1.5: the `.5` extends the version marker, not the episode number. Regression guard for a fix where the trailing-fraction path glued `.5` onto the episode and fabricated a half-episode `06.5`. `JapDub` is an audio term, `GerEngSub` a dual-language subtitle tag (not a release group).",
+    "output": {
+      "title": "Mahoutsukai Reimeiki",
+      "episode": "06",
+      "release_version": "1.5",
+      "video_resolution": "1080p",
+      "audio_term": ["AAC", "JapDub"],
+      "subtitles": "GerEngSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Some-Stuffs]_Jojo's_Bizarre_Adventure_Diamond_is_Unbreakable_NCOP1a_(1920x1080_Blu-Ray_FLAC)_[343E8357].mkv",
+    "source": "erengy/anitomy",
+    "note": "Creditless-opening tag `NCOP` is split off as a type plus opening number `1a`, rather than left glued onto the end of the title (which is what upstream's develop parser does).",
+    "output": {
+      "release_group": "Some-Stuffs",
+      "title": "Jojo's Bizarre Adventure Diamond is Unbreakable",
+      "type": "NCOP",
+      "episode": "1a",
+      "video_resolution": "1920x1080",
+      "source": "Blu-Ray",
+      "audio_term": "FLAC",
+      "file_checksum": "343E8357",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[GLORY] NieR Automata Ver1.1a - 01 [1080p HEVC]",
+    "source": "erengy/anitomy",
+    "note": "`Ver1.1a` is part of the real title (the game's version subtitle), not a release version or partial episode; the ` - 01` after it is the episode. See erengy/taiga#1110, erengy/anitomy#20.",
+    "output": {
+      "release_group": "GLORY",
+      "title": "NieR Automata Ver1.1a",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "video_term": "HEVC"
+    }
+  },
+  {
+    "input": "Tokyo Mew Mew New S01E12-[1080p][BDRIP][x265.FLAC].mkv",
+    "source": "erengy/anitomy",
+    "note": "Spaceless dash directly after `S01E12` must not swallow the following bracket group into the episode/title. See erengy/taiga#1222.",
+    "output": {
+      "title": "Tokyo Mew Mew New",
+      "season": "01",
+      "episode": "12",
+      "video_resolution": "1080p",
+      "source": "BDRIP",
+      "video_term": "x265",
+      "audio_term": "FLAC",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "2.5 Jigen no Ririsa E01 [1080p][E-AC-3][JapDub][GerSub][Web-DL].mkv",
+    "source": "erengy/anitomy",
+    "note": "Leading `2.5` is part of the title (\"2.5-dimensional\"), not a fractional episode. `JapDub` is audio, `GerSub` subtitles.",
+    "output": {
+      "title": "2.5 Jigen no Ririsa",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "audio_term": ["E-AC-3", "JapDub"],
+      "subtitles": "GerSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "NEET Kunoichi to Naze ka Dousei Hajimemashita E01-E02 [1080p][AAC][JapDub][GerSub][Web-DL].mkv",
+    "source": "erengy/anitomy",
+    "note": "Dashed `E01-E02` range is parsed as two episodes (01 and 02), not episode 01 plus an episode_title of `E02`.",
+    "output": {
+      "title": "NEET Kunoichi to Naze ka Dousei Hajimemashita",
+      "episode": ["01", "02"],
+      "video_resolution": "1080p",
+      "audio_term": ["AAC", "JapDub"],
+      "subtitles": "GerSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "e8cf4075112ea1a0.mp4",
+    "source": "erengy/anitomy",
+    "note": "Opaque hex hash filename: only a title and extension come out, with no hex run mis-read as a checksum or episode.",
+    "output": {
+      "title": "e8cf4075112ea1a0",
+      "file_extension": "mp4"
+    }
+  },
+  {
+    "input": "Ore wa Seikan Kokka no Akutoku Ryoushu! E1P [1080p][AAC][JapDub][GerEngSub][Web-DL].mkv",
+    "source": "erengy/anitomy",
+    "note": "Malformed episode marker `E1P` (a typo for `EP1`) is left in the title rather than force-parsed into an episode. `JapDub` is audio, `GerEngSub` subtitles.",
+    "output": {
+      "title": "Ore wa Seikan Kokka no Akutoku Ryoushu! E1P",
+      "video_resolution": "1080p",
+      "audio_term": ["AAC", "JapDub"],
+      "subtitles": "GerEngSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
   }
 ]
