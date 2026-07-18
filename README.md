@@ -114,6 +114,66 @@ and value); `ElementKind`/`kind` covers title, episode, season, release group,
 video/audio terms, resolution, checksum, and so on — see
 [`anitomy/src/element.rs`](anitomy/src/element.rs) for the full set.
 
+### Parsing a set together
+
+`parse_together` parses a *set* of related filenames at once, returning one
+element list per input (result `i` is for input `i`). Using the whole set as
+shared context resolves things a single filename can't — most importantly, a
+directory batch range like `(01-12)` no longer masks the real per-file episode,
+and a series title that lives only in a parent folder is recovered. Unrelated or
+single-item lists are a safe no-op (each is just its ordinary parse). Full and
+relative paths work on every platform (`/` and `\`, including UNC/drive-letter).
+
+Parsing each of these on its own would read `01` and `12` from the folder's
+`(01-12)` range and miss the actual episode; together, they come back as `05`
+and `06`:
+
+Rust:
+
+```rust
+let results = anitomy_ng::parse_together(
+    &[
+        "Frieren (01-12) [Batch]/Frieren - 05 [1080p].mkv",
+        "Frieren (01-12) [Batch]/Frieren - 06 [1080p].mkv",
+    ],
+    anitomy_ng::Options::default(),
+);
+// results[0] -> episode "05", results[1] -> episode "06"
+```
+
+Python:
+
+```python
+results = anitomy_ng.parse_together([
+    "Frieren (01-12) [Batch]/Frieren - 05 [1080p].mkv",
+    "Frieren (01-12) [Batch]/Frieren - 06 [1080p].mkv",
+])
+# results[0] -> episode "05", results[1] -> episode "06"
+```
+
+JavaScript / TypeScript:
+
+```ts
+import { parse_together } from "anitomy-ng";
+
+const results = parse_together([
+  "Frieren (01-12) [Batch]/Frieren - 05 [1080p].mkv",
+  "Frieren (01-12) [Batch]/Frieren - 06 [1080p].mkv",
+]);
+// results[0] -> episode "05", results[1] -> episode "06"
+```
+
+C# / .NET:
+
+```csharp
+var results = Anitomy.ParseTogether(new[]
+{
+    "Frieren (01-12) [Batch]/Frieren - 05 [1080p].mkv",
+    "Frieren (01-12) [Batch]/Frieren - 06 [1080p].mkv",
+});
+// results[0] -> episode "05", results[1] -> episode "06"
+```
+
 Command line (`anitomy`) — takes filenames as arguments or reads them from
 stdin (one per line), and prints an aligned table or, with `--json`, an array
 of `{ filename, elements }`:
