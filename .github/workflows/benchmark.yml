@@ -1,20 +1,9 @@
 name: Conformance benchmark
 
-# Scores anitomy-ng against reference parsers over the shared fixture corpus
-# (scripts/benchmark.py) and publishes the table to the run summary + an
-# artifact. Not a gate — it tracks how we compare to the still-evolving
-# reference projects over time. Runs on demand and monthly.
-#
-# Reference engines are built here via the adapters in scripts/adapters/:
-# erengy/anitomy develop + master (C++), Rapptz/anitomy-rs (Rust), yjl9903/anitomy
-# (JS), and tabratton/AnitomySharp (C#); anitopy + aniparse are in-process Python.
-# Each build is continue-on-error: if one fails, benchmark.py reports that engine
-# as skipped and still produces a table. With --speed it also emits per-runtime
-# speed tables (Rust via `cargo bench` on scripts/bench; others self-timed).
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of each month
+    - cron: "0 6 1 * *"
 
 permissions:
   contents: read
@@ -26,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown # for the anitomy-ng wasm (JS cohort) build
+          targets: wasm32-unknown-unknown
       - uses: jetli/wasm-pack-action@v0.4.0
       - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-node@v4
@@ -35,14 +24,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - run: touch refs.md # accumulates the exact reference versions compared against
+      - run: touch refs.md
 
-      # anitomy-ng (built from this checkout) + anitopy + aniparse are in-process engines.
       - name: Build anitomy-ng extension
         working-directory: anitomy-py
         run: uv sync
 
-      # --- Rapptz/anitomy-rs (Rust) --------------------------------------
       - name: Build Rapptz adapter
         id: rapptz
         continue-on-error: true
@@ -54,7 +41,6 @@ jobs:
           rev=$(grep -A2 'name = "anitomy"' scripts/adapters/rapptz/Cargo.lock | grep -o '#[0-9a-f]\{40\}' | tr -d '#' | cut -c1-9)
           echo "- rapptz: Rapptz/anitomy-rs@${rev:-master}" >> refs.md
 
-      # --- erengy/anitomy @ develop (C++23, header-only) -----------------
       - uses: actions/checkout@v4
         with:
           repository: erengy/anitomy
@@ -64,20 +50,15 @@ jobs:
         id: anitomy_develop
         continue-on-error: true
         run: |
-          # erengy/anitomy@develop uses std::ranges::starts_with — a C++23
-          # library feature libstdc++ ships only from GCC 15, so g++-14 fails
-          # with "'starts_with' is not a member of 'std::ranges'". Pull g++-15
-          # from the toolchain PPA and build with it.
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update && sudo apt-get install -y g++-15
-          g++-15 -std=c++23 -O2 -I_ref/anitomy-develop/include \
-            scripts/adapters/anitomy_develop.cpp -o "$GITHUB_WORKSPACE/develop-adapter"
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w gcc:16.1.0 \
+            g++ -std=c++23 -O2 -static \
+              -I_ref/anitomy-develop/include \
+              scripts/adapters/anitomy_develop.cpp -o develop-adapter
           cat > engine_anitomy_develop.json <<JSON
           {"name":"anitomy_develop","label":"anitomy@develop","schema":"current","cohort":"C++","cmd":["$GITHUB_WORKSPACE/develop-adapter"]}
           JSON
           echo "- anitomy_develop: erengy/anitomy@$(git -C _ref/anitomy-develop rev-parse --short HEAD)" >> refs.md
 
-      # --- erengy/anitomy @ master (C++14, compiled sources) -------------
       - uses: actions/checkout@v4
         with:
           repository: erengy/anitomy
@@ -95,7 +76,6 @@ jobs:
           JSON
           echo "- anitomy_master: erengy/anitomy@$(git -C _ref/anitomy-master rev-parse --short HEAD)" >> refs.md
 
-      # --- yjl9903/anitomy (JS, npm `anitomy`) ---------------------------
       - name: Build yjl9903 adapter
         id: yjl9903
         continue-on-error: true
@@ -107,7 +87,6 @@ jobs:
           ver=$(node -p "require('$GITHUB_WORKSPACE/scripts/adapters/yjl9903/node_modules/anitomy/package.json').version")
           echo "- yjl9903: npm anitomy@${ver}" >> refs.md
 
-      # --- anitomy-ng wasm (JS cohort form of this library) --------------
       - name: Build anitomy-ng wasm adapter
         id: anitomy_ng_wasm
         continue-on-error: true
@@ -118,7 +97,6 @@ jobs:
           {"name":"anitomy_ng_wasm","label":"anitomy_ng","schema":"current","cohort":"JS (Node)","cmd":["node","$GITHUB_WORKSPACE/scripts/adapters/anitomy_ng_wasm/adapter.cjs","$GITHUB_WORKSPACE/dist-npm/node"]}
           JSON
 
-      # --- tabratton/AnitomySharp (C#/.NET, NuGet `AnitomySharp`) --------
       - name: Build AnitomySharp adapter
         id: anitomysharp
         continue-on-error: true
