@@ -145,7 +145,7 @@ pub(crate) fn build_element_value(
         if is_transformable_delimiter(token) {
             value.push(' ');
         } else {
-            value.push_str(&token.value);
+            value.push_str(token.value);
         }
     }
     if trailing_ellipsis {

@@ -26,7 +26,7 @@ pub(super) fn parse_video_resolution(tokens: &mut [Token]) -> Vec<Element> {
     // Find all free tokens matching the pattern.
     for token in tokens
         .iter_mut()
-        .filter(|t| is_free_token(t) && pattern().is_match(&t.value))
+        .filter(|t| is_free_token(t) && pattern().is_match(t.value))
     {
         token.element_kind = Some(ElementKind::VideoResolution);
         elements.push(Element {

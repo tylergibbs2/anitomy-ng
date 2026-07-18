@@ -62,7 +62,7 @@ pub(super) fn parse_part(tokens: &mut [Token]) -> Option<Element> {
             if let Some((value, position)) =
                 tokens.get(keyword_idx - 2).map(|t| (t.value, t.position))
             {
-                if let Some(number) = from_ordinal_number(&value) {
+                if let Some(number) = from_ordinal_number(value) {
                     mark(tokens, keyword_idx - 2, ElementKind::Part);
                     mark(tokens, keyword_idx, ElementKind::Part);
                     return Some(Element {
@@ -100,7 +100,7 @@ pub(super) fn parse_part(tokens: &mut [Token]) -> Option<Element> {
         let Some((value, position)) = tokens.get(idx).map(|t| (t.value, t.position)) else {
             continue;
         };
-        let Some(caps) = p_prefixed_pattern().captures(&value) else {
+        let Some(caps) = p_prefixed_pattern().captures(value) else {
             continue;
         };
         let Some(group1) = caps.get(1) else {

@@ -33,7 +33,7 @@ pub(super) fn parse_year(tokens: &mut [Token]) -> Option<Element> {
         let Some(middle) = tokens.get(i + 1) else {
             return false;
         };
-        is_free_token(middle) && middle.is_number && is_year_shaped(&middle.value)
+        is_free_token(middle) && middle.is_number && is_year_shaped(middle.value)
     });
 
     if let Some(index) = index {
@@ -53,7 +53,7 @@ pub(super) fn parse_year(tokens: &mut [Token]) -> Option<Element> {
     // nothing, so it can't override a more confident match.
     let index = tokens
         .iter()
-        .position(|t| is_free_token(t) && t.is_number && is_year_shaped(&t.value))?;
+        .position(|t| is_free_token(t) && t.is_number && is_year_shaped(t.value))?;
     let token = tokens.get_mut(index)?;
     token.element_kind = Some(ElementKind::Year);
     Some(Element {

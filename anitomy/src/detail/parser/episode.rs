@@ -198,7 +198,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
     // episode (`E01`, `S01E02`, `EP07`) anywhere? If so, a bare unmarked range
     // found below is title numbering, not episodes, and is skipped.
     let has_marked_episode = tokens.iter().enumerate().any(|(i, t)| {
-        is_free_token(t) && match_episode_token(&t.value).is_some() && is_marked_episode(tokens, i)
+        is_free_token(t) && match_episode_token(t.value).is_some() && is_marked_episode(tokens, i)
     });
 
     for idx in free_indices {
@@ -208,7 +208,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
         let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
-        let Some(m1) = match_episode_token(&value) else {
+        let Some(m1) = match_episode_token(value) else {
             continue;
         };
 
@@ -241,7 +241,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             .and_then(|_| {
                 let after_idx = idx + 2;
                 let after_value = tokens.get(after_idx)?.value;
-                let m2 = match_episode_token(&after_value)?;
+                let m2 = match_episode_token(after_value)?;
                 // A both-single-digit range glued to a title (`1-2`, `1+2`) is
                 // title numbering, not a batch. A real batch reaches double
                 // digits (`1-13`) or isn't glued, so it is unaffected.
@@ -389,7 +389,7 @@ fn parse_japanese_counter(tokens: &mut [Token], elements: &mut Vec<Element>) -> 
         let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
-        let Some(caps) = japanese_episode_counter_pattern().captures(&value) else {
+        let Some(caps) = japanese_episode_counter_pattern().captures(value) else {
             continue;
         };
         // Group 1 is mandatory in the pattern; `else continue` is unreachable
@@ -397,7 +397,7 @@ fn parse_japanese_counter(tokens: &mut [Token], elements: &mut Vec<Element>) -> 
         let Some(group1) = caps.get(1) else {
             continue;
         };
-        let offset = byte_to_char_offset(&value, group1.start());
+        let offset = byte_to_char_offset(value, group1.start());
         let group1 = group1.as_str().to_string();
         let position = tokens.get(idx).map_or(0, |t| t.position);
         add_element_with_value(tokens, idx, group1, position + offset, elements);
@@ -538,7 +538,7 @@ fn parse_partial_episode(tokens: &mut [Token], elements: &mut Vec<Element>) -> b
         else {
             continue;
         };
-        if !is_partial_episode(&value) {
+        if !is_partial_episode(value) {
             continue;
         }
         // e.g. `NieR:Automata Ver1.1a`
@@ -635,10 +635,10 @@ fn parse_last_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool 
             let Some(value) = tokens.get(p).map(|t| t.value) else {
                 continue;
             };
-            if equal_ignore_ascii_case(&value, "Cour") || equal_ignore_ascii_case(&value, "Part") {
+            if equal_ignore_ascii_case(value, "Cour") || equal_ignore_ascii_case(value, "Part") {
                 continue;
             }
-            if equal_ignore_ascii_case(&value, "Movie") || equal_ignore_ascii_case(&value, "No") {
+            if equal_ignore_ascii_case(value, "Movie") || equal_ignore_ascii_case(value, "No") {
                 continue;
             }
             if is_version_number_reversed(tokens, p) {

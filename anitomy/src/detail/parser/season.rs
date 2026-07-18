@@ -48,7 +48,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
                 && tokens.get(i).is_some_and(is_free_token);
             if ends_with_season {
                 if let Some(value) = tokens.get(i).map(|t| t.value) {
-                    if let Some(number) = from_ordinal_number(&value) {
+                    if let Some(number) = from_ordinal_number(value) {
                         let position = tokens.get(i).map_or(0, |t| t.position);
                         mark(tokens, i, ElementKind::Season);
                         mark(tokens, i + 2, ElementKind::Season);
@@ -124,7 +124,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
         let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
-        let Some(caps) = s_prefixed_pattern().captures(&value) else {
+        let Some(caps) = s_prefixed_pattern().captures(value) else {
             continue;
         };
         // Group 1 is mandatory in the pattern; `else continue` is unreachable
@@ -132,7 +132,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
         let Some(group1) = caps.get(1) else {
             continue;
         };
-        let group1_offset = byte_to_char_offset(&value, group1.start());
+        let group1_offset = byte_to_char_offset(value, group1.start());
         let group1 = group1.as_str().to_string();
         let position = tokens.get(idx).map_or(0, |t| t.position);
 
@@ -179,7 +179,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             let Some(value) = tokens.get(idx).map(|t| t.value) else {
                 continue;
             };
-            let Some(caps) = japanese_counter_pattern().captures(&value) else {
+            let Some(caps) = japanese_counter_pattern().captures(value) else {
                 continue;
             };
             // Group 1 is mandatory in the pattern; `else continue` is
@@ -187,7 +187,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             let Some(group1) = caps.get(1) else {
                 continue;
             };
-            let offset = byte_to_char_offset(&value, group1.start());
+            let offset = byte_to_char_offset(value, group1.start());
             let group1 = group1.as_str().to_string();
             let position = tokens.get(idx).map_or(0, |t| t.position);
 

@@ -73,7 +73,7 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
         // Groups below are all mandatory in their patterns, so `if let Some`
         // always binds when the regex matched; it keeps this panic-free
         // (no `expect`) without altering the loop's `search_from` advance.
-        if let Some(caps) = single_volume_pattern().captures(&value) {
+        if let Some(caps) = single_volume_pattern().captures(value) {
             mark(tokens, volume_idx, ElementKind::Volume);
             mark(tokens, token_idx, ElementKind::Volume);
             if let Some(number) = caps.get(1) {
@@ -87,7 +87,7 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
                 elements.push(Element {
                     kind: ElementKind::ReleaseVersion,
                     value: version.as_str().to_string(),
-                    position: position + byte_to_char_offset(&value, version.start()),
+                    position: position + byte_to_char_offset(value, version.start()),
                 });
             } else if let Some(second_idx) = matching_ampersand_volume(tokens, token_idx) {
                 if let Some(second) = tokens.get(second_idx) {
@@ -99,7 +99,7 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
                     mark(tokens, second_idx, ElementKind::Volume);
                 }
             }
-        } else if let Some(caps) = multiple_volumes_pattern().captures(&value) {
+        } else if let Some(caps) = multiple_volumes_pattern().captures(value) {
             mark(tokens, volume_idx, ElementKind::Volume);
             mark(tokens, token_idx, ElementKind::Volume);
             if let (Some(first), Some(second)) = (caps.get(1), caps.get(2)) {

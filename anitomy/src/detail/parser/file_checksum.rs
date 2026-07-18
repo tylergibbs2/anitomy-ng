@@ -18,7 +18,7 @@ pub(super) fn parse_file_checksum(tokens: &mut [Token]) -> Option<Element> {
         .iter()
         .enumerate()
         .rev()
-        .find(|(_, t)| is_free_token(t) && is_checksum(&t.value))
+        .find(|(_, t)| is_free_token(t) && is_checksum(t.value))
         .map(|(i, _)| i)?;
 
     let token = tokens.get_mut(index)?;
