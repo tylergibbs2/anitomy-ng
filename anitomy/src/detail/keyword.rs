@@ -478,10 +478,9 @@ pub(crate) fn get_composite(word: &str) -> Option<Keyword> {
     let lower = word.to_ascii_lowercase();
     let (codes, kind) = if let Some(rest) = strip_suffix_any(&lower, &["subs", "sub"]) {
         (rest, KeywordKind::SubtitleLanguage)
-    } else if let Some(rest) = strip_suffix_any(&lower, &["dubs", "dub"]) {
-        (rest, KeywordKind::AudioLanguage)
     } else {
-        return None;
+        let rest = strip_suffix_any(&lower, &["dubs", "dub"])?;
+        (rest, KeywordKind::AudioLanguage)
     };
     // Prefix must be a non-empty run of whole three-letter codes.
     if codes.is_empty() || codes.len() % 3 != 0 {
