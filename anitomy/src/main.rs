@@ -35,6 +35,10 @@ struct Cli {
     #[arg(short, long)]
     json: bool,
 
+    /// Parse related filenames together, grouped by parent directory
+    #[arg(short = 't', long)]
+    together: bool,
+
     // clap derives each long flag from the field name (`no_episode` ->
     // `--no-episode`) and uses the doc comment as its help text.
     /// Disable episode parsing
@@ -105,13 +109,18 @@ fn main() -> ExitCode {
         cli.filenames.clone()
     };
 
-    let results: Vec<(String, Vec<Element>)> = inputs
-        .into_iter()
-        .map(|name| {
-            let elements = anitomy_ng::parse(&name, options);
-            (name, elements)
-        })
-        .collect();
+    let results: Vec<(String, Vec<Element>)> = if cli.together {
+        let parsed = parse_together_grouped(&inputs, options);
+        inputs.into_iter().zip(parsed).collect()
+    } else {
+        inputs
+            .into_iter()
+            .map(|name| {
+                let elements = anitomy_ng::parse(&name, options);
+                (name, elements)
+            })
+            .collect()
+    };
 
     // Buffer all output behind a single locked handle; ignore downstream
     // `BrokenPipe` (e.g. `| head`) rather than panicking on it.
@@ -142,6 +151,45 @@ fn read_stdin_lines() -> io::Result<Vec<String>> {
         }
     }
     Ok(lines)
+}
+
+/// Parse `inputs` in per-directory groups via [`anitomy_ng::parse_together`],
+/// returning one result per input in the original order.
+fn parse_together_grouped(inputs: &[String], options: Options) -> Vec<Vec<Element>> {
+    let mut groups: Vec<(&str, Vec<usize>)> = Vec::new();
+    for (i, name) in inputs.iter().enumerate() {
+        let key = dir_prefix(name);
+        match groups.iter_mut().find(|(k, _)| *k == key) {
+            Some((_, indices)) => indices.push(i),
+            None => groups.push((key, vec![i])),
+        }
+    }
+
+    let mut results: Vec<Vec<Element>> = vec![Vec::new(); inputs.len()];
+    for (_, indices) in &groups {
+        let group: Vec<&str> = indices
+            .iter()
+            .filter_map(|&i| inputs.get(i))
+            .map(String::as_str)
+            .collect();
+        for (&i, elements) in indices
+            .iter()
+            .zip(anitomy_ng::parse_together(&group, options))
+        {
+            if let Some(slot) = results.get_mut(i) {
+                *slot = elements;
+            }
+        }
+    }
+    results
+}
+
+/// The directory portion of `name` (up to the last `/` or `\`), or `""`.
+fn dir_prefix(name: &str) -> &str {
+    match name.rfind(['/', '\\']) {
+        Some(pos) => name.get(..pos).unwrap_or(""),
+        None => "",
+    }
 }
 
 /// Human-readable, aligned `kind  value` rows under each filename.
@@ -192,4 +240,49 @@ fn write_json(out: &mut impl Write, results: &[(String, Vec<Element>)]) -> io::R
         })
         .collect();
     writeln!(out, "{}", serde_json::Value::Array(json))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anitomy_ng::ElementKind;
+
+    fn episodes(elements: &[Element]) -> Vec<&str> {
+        elements
+            .iter()
+            .filter(|e| e.kind == ElementKind::Episode)
+            .map(|e| e.value.as_str())
+            .collect()
+    }
+
+    #[test]
+    fn dir_prefix_covers_both_separators_and_bare_names() {
+        assert_eq!(dir_prefix("a/b/c.mkv"), "a/b");
+        assert_eq!(dir_prefix("a\\b\\c.mkv"), "a\\b");
+        assert_eq!(dir_prefix("c.mkv"), "");
+    }
+
+    #[test]
+    fn grouped_folder_recovers_episode_from_range() {
+        let inputs = vec![
+            "Series (01-12)[batch]/Series - 07.mkv".to_string(),
+            "Series (01-12)[batch]/Series - 08.mkv".to_string(),
+        ];
+        let results = parse_together_grouped(&inputs, Options::default());
+        assert_eq!(episodes(&results[0]), ["07"]);
+        assert_eq!(episodes(&results[1]), ["08"]);
+    }
+
+    #[test]
+    fn separate_directories_group_apart_in_original_order() {
+        let inputs = vec![
+            "A/Show - 01.mkv".to_string(),
+            "B/Other - 05.mkv".to_string(),
+            "A/Show - 02.mkv".to_string(),
+        ];
+        let results = parse_together_grouped(&inputs, Options::default());
+        assert_eq!(episodes(&results[0]), ["01"]);
+        assert_eq!(episodes(&results[1]), ["05"]);
+        assert_eq!(episodes(&results[2]), ["02"]);
+    }
 }
