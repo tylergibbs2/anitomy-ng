@@ -110,10 +110,9 @@ jobs:
       - uses: jetli/wasm-pack-action@v0.4.0
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
-      # Trusted Publishing (OIDC) needs npm >= 11.5.1; Node 20 ships npm 10.
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@12
       - run: bash scripts/build-npm.sh
       - run: node anitomy-js/test/smoke.cjs # fails the release if the build is broken
       - name: Publish to npm
