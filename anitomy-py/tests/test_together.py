@@ -66,8 +66,7 @@ def test_together(case: dict) -> None:
     results = anitomy.parse_together(case["inputs"])
     actual = [_group(record) for record in results]
     expected = [
-        {kind: _normalize(values) for kind, values in record.items()}
-        for record in case["outputs"]
+        {kind: _normalize(values) for kind, values in record.items()} for record in case["outputs"]
     ]
     assert actual == expected
 

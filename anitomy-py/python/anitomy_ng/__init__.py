@@ -64,9 +64,7 @@ def parse(filename: str, options: Options | None = None) -> list[Element]:
     ]
 
 
-def parse_together(
-    filenames: list[str], options: Options | None = None
-) -> list[list[Element]]:
+def parse_together(filenames: list[str], options: Options | None = None) -> list[list[Element]]:
     """Parse a set of related anime filenames together.
 
     Returns one element list per input, in the same order (result ``i`` is for
