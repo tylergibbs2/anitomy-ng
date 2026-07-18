@@ -128,6 +128,18 @@ fn starts_with_episode_or_type_keyword(tokens: &[Token], idx: usize) -> bool {
     }
 }
 
+/// The `x1 || x2` marker test as a standalone predicate, so the marker-priority
+/// pre-scan and the per-token check agree: the token is an explicit
+/// `E##`/`#`/`SxxExx` episode (non-numeric, x1) or is prefixed by an
+/// episode/type keyword (x2). A bare numeric range (`17-26`, valid only via x3)
+/// is *not* marked.
+fn is_marked_episode(tokens: &[Token], idx: usize) -> bool {
+    let x1 = !tokens.get(idx).is_some_and(is_numeric_token);
+    let x2 = find_prev_token(tokens, idx, is_not_delimiter_token)
+        .is_some_and(|p| starts_with_episode_or_type_keyword(tokens, p));
+    x1 || x2
+}
+
 fn apply_episode_match(
     tokens: &mut [Token],
     idx: usize,
@@ -182,6 +194,13 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
         .map(|(i, _)| i)
         .collect();
 
+    // Marker priority (issue #2): does the name carry an explicitly *marked*
+    // episode (`E01`, `S01E02`, `EP07`) anywhere? If so, a bare unmarked range
+    // found below is title numbering, not episodes, and is skipped.
+    let has_marked_episode = tokens.iter().enumerate().any(|(i, t)| {
+        is_free_token(t) && match_episode_token(&t.value).is_some() && is_marked_episode(tokens, i)
+    });
+
     for idx in free_indices {
         if !tokens.get(idx).is_some_and(is_free_token) {
             continue;
@@ -193,10 +212,8 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             continue;
         };
 
-        let is_numeric = tokens.get(idx).is_some_and(is_numeric_token);
-        let x1 = !is_numeric;
-        let x2 = find_prev_token(tokens, idx, is_not_delimiter_token)
-            .is_some_and(|p| starts_with_episode_or_type_keyword(tokens, p));
+        // x1/x2: an explicit `E##`/`#`/`SxxExx` token or a keyword-prefixed one.
+        let is_marked = is_marked_episode(tokens, idx);
 
         // A single-digit range glued straight to a title word (`Ranma 1-2`,
         // `Ranma 1+2`) is a title's own numbering (½-style), not an episode
@@ -235,7 +252,14 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             });
         let x3 = range_next.is_some();
 
-        if !(x1 || x2 || x3) {
+        if !(is_marked || x3) {
+            continue;
+        }
+        // Marker priority (issue #2 / erengy/anitomy #36, beyond upstream): when
+        // a marked episode exists elsewhere in the name, a bare unmarked range
+        // (`17-26` beside `E01`) is title numbering, not episodes — the explicit
+        // marker wins, so skip the range and leave it for the title.
+        if has_marked_episode && !is_marked {
             continue;
         }
 

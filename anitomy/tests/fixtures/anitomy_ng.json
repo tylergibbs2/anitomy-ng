@@ -408,5 +408,56 @@
       "source": "Web-DL",
       "file_extension": "mkv"
     }
+  },
+  {
+    "input": "Fujimoto Tatsuki 17-26 E01 [1080p][E-AC-3][GerJapDub][GerEngSub][Web-DL].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
+    "note": "TARGET (issue #2, same as erengy/anitomy #36). The bare range `17-26` is title text and the marked `E01` is the real episode. Marker priority: when a marked episode (E##/#/SxxExx) is present, a bare unmarked range is not promoted to episode, so it falls back into the title.",
+    "output": {
+      "title": "Fujimoto Tatsuki 17-26",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "audio_term": "E-AC-3",
+      "release_group": "GerJapDub",
+      "subtitles": "GerEngSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Group] Show 17-26 [1080p].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
+    "note": "Guard: a bare numeric range with no marked episode is a genuine episode range and must stay one.",
+    "output": {
+      "release_group": "Group",
+      "title": "Show",
+      "episode": ["17", "26"],
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Group] Show S01E17-E26 [1080p].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
+    "note": "Guard: a marked range (SxxExx-Exx) stays an episode range; marker priority only suppresses bare, unmarked ranges.",
+    "output": {
+      "release_group": "Group",
+      "title": "Show",
+      "season": "01",
+      "episode": ["17", "26"],
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Fujimoto Tatsuki 17 E01 [1080p].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
+    "note": "Guard: a single stray number beside a marked E01 already stays in the title (only ranges are affected), so the fix must not over-suppress it.",
+    "output": {
+      "title": "Fujimoto Tatsuki 17",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
   }
 ]
