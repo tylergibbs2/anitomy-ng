@@ -14,14 +14,13 @@ use crate::options::Options;
 /// Re-parse the filename component as authoritative, borrowing only a missing
 /// title from the parent folder; inputs with no directory prefix are unchanged.
 pub(super) fn parse_one(input: &str, options: Options) -> Vec<Element> {
-    let full = crate::parse(input, options);
     let chars: Vec<char> = input.chars().collect();
 
-    let Some(dir_end) = directory_boundary(&chars, &full) else {
-        return full;
+    let Some(dir_end) = directory_boundary(&chars, options) else {
+        return crate::parse(input, options);
     };
     let Some(tail) = chars.get(dir_end..) else {
-        return full;
+        return crate::parse(input, options);
     };
     let filename: String = tail.iter().collect();
 
@@ -55,10 +54,15 @@ pub(super) fn parse_one(input: &str, options: Options) -> Vec<Element> {
 
 /// End (exclusive) of a real directory prefix, or `None`.
 ///
-/// An absolute-path prefix (`C:\`, `\\server\`) splits at its last separator;
-/// otherwise the boundary is the last separator no element spans, which keeps a
-/// `/` in `Fate/stay night` or a `\` in `AC\DC` from counting.
-fn directory_boundary(chars: &[char], elements: &[Element]) -> Option<usize> {
+/// An absolute-path prefix (`C:\`, `\\server\`) splits at its last separator.
+/// Otherwise the boundary is the rightmost separator whose trailing component
+/// parses as a real filename (see [`looks_like_filename`]). Deciding by
+/// re-parsing the candidate segment — rather than trusting the greedy
+/// whole-string parse's title span — is what lets a real folder be split off
+/// while a `/` in `Fate/stay night` or a `\` in `AC\DC` is left alone: the
+/// whole-string parse absorbs both a real separator and an in-title one into a
+/// single title element, so its spans can't tell them apart.
+fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
     if has_absolute_windows_prefix(chars) {
         return chars
             .iter()
@@ -66,13 +70,61 @@ fn directory_boundary(chars: &[char], elements: &[Element]) -> Option<usize> {
             .map(|i| i.saturating_add(1));
     }
 
-    let mut boundary = None;
-    for (i, &c) in chars.iter().enumerate() {
-        if is_path_separator(c) && !spanned(elements, i) {
-            boundary = Some(i.saturating_add(1));
+    for i in (0..chars.len()).rev() {
+        if !chars.get(i).is_some_and(|&c| is_path_separator(c)) {
+            continue;
+        }
+        let prefix = chars.get(..i).unwrap_or_default();
+        let tail = chars.get(i.saturating_add(1)..).unwrap_or_default();
+        if looks_like_filename(prefix, tail, options) {
+            return Some(i.saturating_add(1));
         }
     }
-    boundary
+    None
+}
+
+/// Does the component after a separator parse as a real filename, rather than as
+/// the tail of a title that merely contains a slash (`Fate/stay night`)? A real
+/// filename shows one of three signals; an in-title slash's tail shows none:
+///
+///   (a) it carries its own release metadata — a group, resolution, checksum,
+///       season, … — that a lone title fragment would not;
+///   (b) it has no title of its own (an episode-led name whose series title
+///       lives in the parent folder, e.g. `05 - Episode.mkv`); or
+///   (c) its title echoes the parent component (the folder restates the show,
+///       e.g. `My Show/My Show - 01.mkv`).
+fn looks_like_filename(prefix: &[char], tail: &[char], options: Options) -> bool {
+    let tail_input: String = tail.iter().collect();
+    let elements = crate::parse(&tail_input, options);
+
+    // (a) own release metadata.
+    if elements.iter().any(|e| is_release_descriptor(e.kind)) {
+        return true;
+    }
+
+    // (b) no title of its own.
+    let Some(tail_title) = elements.iter().find(|e| e.kind == ElementKind::Title) else {
+        return true;
+    };
+
+    // (c) title echoes the parent component.
+    let parent_input: String = prefix.iter().collect();
+    crate::parse(&parent_input, options)
+        .iter()
+        .any(|e| e.kind == ElementKind::Title && e.value == tail_title.value)
+}
+
+/// A kind that marks a self-contained release — anything a lone title fragment
+/// wouldn't carry. Title / episode / episode-title / extension are excluded
+/// because an in-title slash's tail (`stay night - 01.mkv`) has exactly those.
+fn is_release_descriptor(kind: ElementKind) -> bool {
+    !matches!(
+        kind,
+        ElementKind::Title
+            | ElementKind::Episode
+            | ElementKind::EpisodeTitle
+            | ElementKind::FileExtension
+    )
 }
 
 /// Start of the component before the boundary separator at `dir_end - 1`.
@@ -99,12 +151,4 @@ fn has_absolute_windows_prefix(chars: &[char]) -> bool {
         (Some(c), Some(':'), Some(sep)) if c.is_ascii_alphabetic() && is_path_separator(*sep)
     );
     unc || drive
-}
-
-/// Does any element cover char index `i`?
-fn spanned(elements: &[Element], i: usize) -> bool {
-    elements.iter().any(|e| {
-        let end = e.position.saturating_add(e.value.chars().count());
-        e.position <= i && i < end
-    })
 }

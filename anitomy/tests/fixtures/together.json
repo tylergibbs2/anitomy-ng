@@ -370,5 +370,57 @@
     ],
     "source": "anitomy-ng",
     "note": "Dual-episode files keep both episode numbers per record."
+  },
+  {
+    "name": "bare-title-folder",
+    "inputs": [
+      "Cowboy Bebop/01 - Asteroid Blues.mkv",
+      "Cowboy Bebop/02 - Stray Dog Strut.mkv"
+    ],
+    "outputs": [
+      { "title": "Cowboy Bebop", "episode": "01", "episode_title": "Asteroid Blues", "file_extension": "mkv" },
+      { "title": "Cowboy Bebop", "episode": "02", "episode_title": "Stray Dog Strut", "file_extension": "mkv" }
+    ],
+    "source": "anitomy-ng",
+    "note": "A folder named only for the show (no brackets) is split off because the file has no title of its own, and the title is borrowed."
+  },
+  {
+    "name": "folder-echoes-title",
+    "inputs": [
+      "My Show/My Show - 01.mkv",
+      "My Show/My Show - 02.mkv"
+    ],
+    "outputs": [
+      { "title": "My Show", "episode": "01", "file_extension": "mkv" },
+      { "title": "My Show", "episode": "02", "file_extension": "mkv" }
+    ],
+    "source": "anitomy-ng",
+    "note": "The folder restates the file's title, so the separator is a real boundary even with no other metadata."
+  },
+  {
+    "name": "deep-directory",
+    "inputs": [
+      "Anime/[Group] Show/Season 1/[Group] Show - 01 [1080p].mkv",
+      "Anime/[Group] Show/Season 1/[Group] Show - 02 [1080p].mkv"
+    ],
+    "outputs": [
+      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
+      { "release_group": "Group", "title": "Show", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+    ],
+    "source": "anitomy-ng",
+    "note": "A three-level path segments to the filename regardless of depth."
+  },
+  {
+    "name": "title-slash-with-group-tag",
+    "inputs": [
+      "[Studio] Fate/stay night - 01.mkv",
+      "[Studio] Fate/stay night - 02.mkv"
+    ],
+    "outputs": [
+      { "release_group": "Studio", "title": "Fate/stay night", "episode": "01", "file_extension": "mkv" },
+      { "release_group": "Studio", "title": "Fate/stay night", "episode": "02", "file_extension": "mkv" }
+    ],
+    "source": "anitomy-ng",
+    "note": "A group tag before an in-title '/' must not make the slash a boundary: the tail 'stay night' carries no metadata of its own, so the title stays whole."
   }
 ]
