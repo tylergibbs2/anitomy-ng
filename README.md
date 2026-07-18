@@ -45,7 +45,7 @@ JavaScript / TypeScript (WebAssembly, works in Node and bundlers):
 npm install anitomy-ng
 ```
 
-Command line — prebuilt binaries for Linux, macOS, and Windows are attached to
+Command line: prebuilt binaries for Linux, macOS, and Windows are attached to
 each [GitHub release](https://github.com/tylergibbs2/anitomy-ng/releases).
 Download one directly, or install with either:
 
@@ -54,7 +54,7 @@ cargo binstall anitomy-ng               # prebuilt binary, no toolchain needed
 cargo install anitomy-ng --features cli # builds from source
 ```
 
-.NET (prebuilt native binaries ship in the package — no Rust toolchain needed):
+.NET (prebuilt native binaries ship in the package, no Rust toolchain needed):
 
 ```sh
 dotnet add package AnitomyNg
@@ -174,7 +174,7 @@ var results = Anitomy.ParseTogether(new[]
 // results[0] -> episode "05", results[1] -> episode "06"
 ```
 
-Command line (`anitomy`) — takes filenames as arguments or reads them from
+Command line (`anitomy`) takes filenames as arguments or reads them from
 stdin (one per line), and prints an aligned table or, with `--json`, an array
 of `{ filename, elements }`:
 

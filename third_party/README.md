@@ -25,11 +25,11 @@ checkout point to.
 ## anitomy-master/ (github.com/erengy/anitomy, `master` branch — the original, frozen implementation)
 
 The pre-rewrite C++14-era implementation (`anitomy.cpp`/`parser.cpp`/etc.,
-`wchar_t`-based, old `ElementCategory` enum). Not the branch upstream's
-tooling defaults to, but a separate, older conformance target: it predates
-the rewrite-only features (e.g. `Part` doesn't exist in this branch at all)
-and heuristics, so its bundled fixture checks against a different baseline
-than `develop`'s.
+`wchar_t`-based, old `ElementCategory` enum). Upstream's tooling doesn't
+default to this branch; it's a separate, older conformance target that
+predates the rewrite-only features (e.g. `Part` doesn't exist in this branch
+at all) and heuristics, so its bundled fixture checks against a different
+baseline than `develop`'s.
 
 - `test_data.json` — copied verbatim from this branch's own `test/data.json`
   (182 cases). Old schema: `anime_title`, `episode_number`,
