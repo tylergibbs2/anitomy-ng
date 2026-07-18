@@ -156,8 +156,9 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
         if !is_match {
             continue;
         }
-        if let Some((value2, position2)) =
-            tokens.get(next2_idx).map(|t| (t.value.to_string(), t.position))
+        if let Some((value2, position2)) = tokens
+            .get(next2_idx)
+            .map(|t| (t.value.to_string(), t.position))
         {
             mark(tokens, next2_idx, ElementKind::Season);
             elements.push(Element {

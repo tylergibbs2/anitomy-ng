@@ -463,6 +463,63 @@
     }
   },
   {
+    "input": "[Erai-raws] Wu Chengen Ji Yao Lu - 09 [480p][Multiple Subtitle] [ENG][POR-BR][SPA-LA][SPA][ARA][FRE][GER][ITA]",
+    "source": "nyaa.si",
+    "note": "Real Erai-raws multi-sub release. Regression guard for the language-code coverage: every bracketed ISO code becomes a `language`, including the regional `POR-BR`/`SPA-LA` (the `-BR`/`-LA` region is merged back onto the code rather than dropped). The leading `[Erai-raws]` group is claimed correctly.",
+    "output": {
+      "release_group": "Erai-raws",
+      "title": "Wu Chengen Ji Yao Lu",
+      "episode": "09",
+      "video_resolution": "480p",
+      "subtitles": "Multiple Subtitle",
+      "language": ["ENG", "POR-BR", "SPA-LA", "SPA", "ARA", "FRE", "GER", "ITA"]
+    }
+  },
+  {
+    "input": "Queen.Emeraldas.OVA.MULTI.Audio.Sub[FRE][ENG][SPA][GER][POR][CHI].480p.DVDRip.CUSTOM.x264.AC3-KuroNeko",
+    "source": "nyaa.si",
+    "note": "Real KuroNeko multi-audio release. Regression guard for the trailing-bracket fix: without a leading group, the 'last bracket is the release group' heuristic used to swallow the final language code `[CHI]` as `release_group` and miss the genuine dash-suffixed group `KuroNeko`. Now the bracketed ISO codes are recognized as `language` (so they're no longer group candidates) and `KuroNeko` is correctly the group. (`OVA` staying in the title span and the dotted `MULTI.Audio` are unrelated pre-existing quirks, left as-is.)",
+    "output": {
+      "title": "Queen Emeraldas OVA",
+      "type": "OVA",
+      "audio_term": ["MULTI.Audio", "AC3"],
+      "subtitles": "Sub",
+      "language": ["FRE", "ENG", "SPA", "GER", "POR", "CHI"],
+      "video_resolution": "480p",
+      "source": "DVDRip",
+      "video_term": "x264",
+      "release_group": "KuroNeko"
+    }
+  },
+  {
+    "input": "[Darkness] Fate-Zero - [1080P BDRip HEVC-10bit FLAC] [Subs EN DE-GER]",
+    "source": "nyaa.si",
+    "note": "TRACKED KNOWN FAILURE. Real Darkness release. The spaced subtitle bracket `[Subs EN DE-GER]` is dropped whole: bare `Subs` isn't a subtitles keyword (only `Sub`), so the tag and its languages `EN`/`DE-GER` never surface. Correct parse recognizes `Subs` as subtitles and the two codes as `language`.",
+    "output": {
+      "release_group": "Darkness",
+      "title": "Fate-Zero",
+      "video_resolution": "1080P",
+      "source": "BDRip",
+      "video_term": ["HEVC", "10bit"],
+      "audio_term": "FLAC",
+      "subtitles": "Subs",
+      "language": ["EN", "DE-GER"]
+    }
+  },
+  {
+    "input": "Hellsing.BDRip.1080p.HQ.Original.Color.Rus.Eng.Fre.Ger.Ita.Spa.Jap.SDIncorporation",
+    "source": "nyaa.si",
+    "note": "TRACKED KNOWN FAILURE. Real release with a dot-separated trailing language list. Only `Eng` and `Jap` (keyword-table codes) are recognized; `Rus`/`Fre`/`Ger`/`Ita`/`Spa` are dropped and the trailing group `SDIncorporation` is lost with them. Correct parse: each code is a `language` and `SDIncorporation` is the release group.",
+    "output": {
+      "title": "Hellsing",
+      "source": "BDRip",
+      "video_resolution": "1080p",
+      "video_term": "HQ",
+      "language": ["Rus", "Eng", "Fre", "Ger", "Ita", "Spa", "Jap"],
+      "release_group": "SDIncorporation"
+    }
+  },
+  {
     "input": "[Group] Show 17-26 [1080p].mkv",
     "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
     "note": "Guard: a bare numeric range with no marked episode is a genuine episode range and must stay one.",

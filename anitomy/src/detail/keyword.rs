@@ -465,6 +465,11 @@ fn language_codes() -> &'static HashSet<String> {
     })
 }
 
+/// Whether `word` is a recognized three-letter language code (case-insensitive).
+pub(crate) fn is_language_code(word: &str) -> bool {
+    language_codes().contains(&word.to_ascii_lowercase())
+}
+
 /// Matches `(<code>)+ Sub|Subs|Dub|Dubs` generically instead of enumerating
 /// every combination as a keyword. Returns a synthetic `SubtitleLanguage`
 /// (`Sub`) or `AudioLanguage` (`Dub`) keyword when `word` is one or more

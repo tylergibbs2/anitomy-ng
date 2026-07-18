@@ -59,9 +59,8 @@ pub(super) fn parse_part(tokens: &mut [Token]) -> Option<Element> {
             && tokens.get(keyword_idx - 1).is_some_and(is_delimiter_token)
             && tokens.get(keyword_idx - 2).is_some_and(is_free_token)
         {
-            if let Some((value, position)) = tokens
-                .get(keyword_idx - 2)
-                .map(|t| (t.value, t.position))
+            if let Some((value, position)) =
+                tokens.get(keyword_idx - 2).map(|t| (t.value, t.position))
             {
                 if let Some(number) = from_ordinal_number(&value) {
                     mark(tokens, keyword_idx - 2, ElementKind::Part);

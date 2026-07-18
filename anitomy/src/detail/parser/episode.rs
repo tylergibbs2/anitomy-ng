@@ -362,8 +362,7 @@ fn parse_fractional_episode(tokens: &mut [Token], elements: &mut Vec<Element>) -
             continue;
         }
 
-        let Some((number_value, position)) = tokens.get(i).map(|t| (t.value, t.position))
-        else {
+        let Some((number_value, position)) = tokens.get(i).map(|t| (t.value, t.position)) else {
             continue;
         };
         add_element_with_value(tokens, i, format!("{number_value}.5"), position, elements);

@@ -41,6 +41,7 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
     }
 
     elements.extend(keywords::parse_keywords(&mut tokens, options));
+    merge_regional_languages(&mut tokens, &mut elements);
 
     if options.parse_file_checksum {
         elements.extend(file_checksum::parse_file_checksum(&mut tokens));
@@ -116,6 +117,49 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
 
     elements.sort_by_key(|e| e.position);
     elements
+}
+
+/// Folds a trailing `-<2-letter region>` back into a `Language` code the dash
+/// split off, e.g. `[POR-BR]` (tokenized `POR` `-` `BR`) -> `POR-BR`. Generic
+/// over every code, unlike the literal `PT-BR` keyword.
+fn merge_regional_languages(tokens: &mut [Token], elements: &mut [Element]) {
+    use super::keyword::is_language_code;
+    use super::token::{is_dash_token, TokenKind};
+
+    for i in 0..tokens.len() {
+        let Some(base) = tokens.get(i) else { continue };
+        if base.element_kind != Some(ElementKind::Language) || !is_language_code(base.value) {
+            continue;
+        }
+        let position = base.position;
+
+        let Some(dash) = tokens.get(i + 1).filter(|t| is_dash_token(t)) else {
+            continue;
+        };
+        let dash_value = dash.value;
+        // A 2-char Text token is a whole word (Text runs are maximal).
+        let Some(region) = tokens.get(i + 2) else {
+            continue;
+        };
+        if region.kind != TokenKind::Text
+            || region.element_kind.is_some()
+            || region.value.len() != 2
+            || !region.value.bytes().all(|b| b.is_ascii_alphabetic())
+        {
+            continue;
+        }
+        let region_value = region.value;
+
+        if let Some(e) = elements
+            .iter_mut()
+            .find(|e| e.kind == ElementKind::Language && e.position == position)
+        {
+            e.value = format!("{}{dash_value}{region_value}", e.value);
+            if let Some(region) = tokens.get_mut(i + 2) {
+                region.element_kind = Some(ElementKind::Language);
+            }
+        }
+    }
 }
 
 /// Content-bundle detection. An enclosed `+` joining content descriptors —

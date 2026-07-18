@@ -40,9 +40,10 @@ pub(super) fn parse_video_resolution(tokens: &mut [Token]) -> Vec<Element> {
     // alongside upstream's `1080`-only special case; upstream lacks it, though
     // its own fixture wants a bare `720` resolved the same way as `1080`.
     if elements.is_empty() {
-        if let Some(token) = tokens.iter_mut().find(|t| {
-            is_free_token(t) && is_numeric_token(t) && matches!(t.value, "1080" | "720")
-        }) {
+        if let Some(token) = tokens
+            .iter_mut()
+            .find(|t| is_free_token(t) && is_numeric_token(t) && matches!(t.value, "1080" | "720"))
+        {
             token.element_kind = Some(ElementKind::VideoResolution);
             elements.push(Element {
                 kind: ElementKind::VideoResolution,
