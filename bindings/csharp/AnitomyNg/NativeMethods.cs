@@ -48,6 +48,28 @@ internal static partial class NativeMethods
     [LibraryImport(Lib)]
     internal static partial void anitomy_result_free(nint result);
 
+    /// <summary>
+    /// Parses <paramref name="count"/> UTF-8 strings (a <c>char**</c> at
+    /// <paramref name="inputs"/>) together; returns an owning batch handle (or
+    /// <see cref="nint.Zero"/> on failure) that must be freed with
+    /// <see cref="anitomy_results_free"/>.
+    /// </summary>
+    [LibraryImport(Lib)]
+    internal static partial nint anitomy_parse_together(nint inputs, nuint count, uint options);
+
+    [LibraryImport(Lib)]
+    internal static partial nuint anitomy_results_len(nint batch);
+
+    /// <summary>
+    /// Borrowed result handle for one input, valid until the batch is freed;
+    /// read it with the <c>anitomy_result_*</c> imports, never free it directly.
+    /// </summary>
+    [LibraryImport(Lib)]
+    internal static partial nint anitomy_results_get(nint batch, nuint index);
+
+    [LibraryImport(Lib)]
+    internal static partial void anitomy_results_free(nint batch);
+
     /// <summary>Static, non-freed C string naming an <c>ElementKind</c> discriminant.</summary>
     [LibraryImport(Lib)]
     internal static partial nint anitomy_kind_name(uint kind);

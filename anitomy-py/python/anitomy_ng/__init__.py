@@ -15,9 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from ._anitomy import Options, parse as _parse
+from ._anitomy import Options, parse as _parse, parse_together as _parse_together
 
-__all__ = ["ElementKind", "Element", "Options", "parse"]
+__all__ = ["ElementKind", "Element", "Options", "parse", "parse_together"]
 
 
 class ElementKind(Enum):
@@ -61,4 +61,23 @@ def parse(filename: str, options: Options | None = None) -> list[Element]:
     return [
         Element(kind=ElementKind(raw.kind), value=raw.value, position=raw.position)
         for raw in _parse(filename, options)
+    ]
+
+
+def parse_together(
+    filenames: list[str], options: Options | None = None
+) -> list[list[Element]]:
+    """Parse a set of related anime filenames together.
+
+    Returns one element list per input, in the same order (result ``i`` is for
+    ``filenames[i]``). The shared context resolves ambiguities a single filename
+    can't — e.g. a directory batch range vs. the real per-file episode, or a
+    series title that lives only in a parent folder.
+    """
+    return [
+        [
+            Element(kind=ElementKind(raw.kind), value=raw.value, position=raw.position)
+            for raw in sublist
+        ]
+        for sublist in _parse_together(list(filenames), options)
     ]

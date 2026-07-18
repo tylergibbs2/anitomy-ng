@@ -125,12 +125,15 @@ options_bridge! {
     parse_year,
 }
 
-// Give the return value a precise TS type (`Element[]`) instead of `any`, while
-// still serializing through serde-wasm-bindgen.
+// Give the return values precise TS types (`Element[]`, `Element[][]`) instead
+// of `any`, while still serializing through serde-wasm-bindgen.
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(typescript_type = "Element[]")]
     pub type Elements;
+
+    #[wasm_bindgen(typescript_type = "Element[][]")]
+    pub type ElementsTogether;
 }
 
 /// Parse an anime video filename into its elements, ordered by position.
@@ -150,5 +153,35 @@ pub fn parse(filename: &str, options: Option<Options>) -> Result<Elements, JsVal
         })
         .collect();
     let value = serde_wasm_bindgen::to_value(&elements)?;
+    Ok(value.unchecked_into())
+}
+
+/// Parse a set of related filenames together, returning one `Element[]` per
+/// input in the same order (result `i` is for `filenames[i]`).
+///
+/// The shared context resolves ambiguities a single filename can't — e.g. a
+/// directory batch range vs. the real per-file episode, or a series title that
+/// lives only in a parent folder. `options` is optional, as in `parse`.
+#[wasm_bindgen]
+pub fn parse_together(
+    filenames: Vec<String>,
+    options: Option<Options>,
+) -> Result<ElementsTogether, JsValue> {
+    let opts = options.map(CoreOptions::from).unwrap_or_default();
+    let refs: Vec<&str> = filenames.iter().map(String::as_str).collect();
+    let batch: Vec<Vec<Element>> = anitomy_ng::parse_together(&refs, opts)
+        .into_iter()
+        .map(|elements| {
+            elements
+                .into_iter()
+                .map(|el| Element {
+                    kind: el.kind.into(),
+                    value: el.value,
+                    position: el.position,
+                })
+                .collect()
+        })
+        .collect();
+    let value = serde_wasm_bindgen::to_value(&batch)?;
     Ok(value.unchecked_into())
 }

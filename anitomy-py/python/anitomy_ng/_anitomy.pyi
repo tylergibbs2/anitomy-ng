@@ -39,3 +39,6 @@ class RawElement:
     position: int
 
 def parse(filename: str, options: Options | None = None) -> list[RawElement]: ...
+def parse_together(
+    filenames: list[str], options: Options | None = None
+) -> list[list[RawElement]]: ...

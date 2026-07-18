@@ -78,4 +78,41 @@ public class AnitomyTests
             Assert.NotEmpty(elements);
         }
     }
+
+    [Fact]
+    public void ParseTogetherRecoversEpisodeFromDirectoryRange()
+    {
+        var results = Anitomy.ParseTogether(new[]
+        {
+            "Show (01-12)/[G] Show - 01 [DEADBEEF].mkv",
+            "Show (01-12)/[G] Show - 02 [12AB34CD].mkv",
+        });
+
+        Assert.Equal(2, results.Count);
+        Assert.Contains(results[0], e => e.Kind == ElementKind.Episode && e.Value == "01");
+        Assert.Contains(results[1], e => e.Kind == ElementKind.Episode && e.Value == "02");
+        Assert.All(results, r => Assert.Contains(r, e => e.Kind == ElementKind.Title && e.Value == "Show"));
+    }
+
+    [Fact]
+    public void ParseTogetherBorrowsTitleFromParentFolder()
+    {
+        var results = Anitomy.ParseTogether(new[]
+        {
+            "OtherSeries [batch]/05 - The Beginning.mkv",
+            "OtherSeries [batch]/04 - The Beginning.mkv",
+        });
+
+        Assert.All(results, r => Assert.Contains(r, e => e.Kind == ElementKind.Title && e.Value == "OtherSeries"));
+    }
+
+    [Fact]
+    public void ParseTogetherReturnsOneResultPerInput()
+    {
+        // Including an empty batch and a heterogeneous one — result count must
+        // always match the input count.
+        Assert.Empty(Anitomy.ParseTogether(Array.Empty<string>()));
+        var mixed = new[] { "[A] Alpha - 01.mkv", "", "C:\\x\\[G] Gamma - 03.mkv" };
+        Assert.Equal(mixed.Length, Anitomy.ParseTogether(mixed).Count);
+    }
 }

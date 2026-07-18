@@ -312,6 +312,125 @@ pub unsafe extern "C" fn anitomy_result_free(result: *mut AnitomyResult) {
     }
 }
 
+// --- Batch result handle ---------------------------------------------------
+
+/// Opaque owner of a multi-file parse — one [`AnitomyResult`] per input. Create with
+/// [`anitomy_parse_together`], read each item with [`anitomy_results_get`] (then the
+/// usual `anitomy_result_*` accessors), free with [`anitomy_results_free`].
+pub struct AnitomyResults {
+    results: Vec<AnitomyResult>,
+}
+
+/// Parses `count` NUL-terminated UTF-8 strings from `inputs` *together* (see
+/// `anitomy_ng::parse_together`), using the shared context across the set to
+/// resolve what a single filename can't.
+///
+/// Returns an owning handle with exactly `count` sub-results in input order —
+/// index `i` corresponds to `inputs[i]` — that the caller must release with
+/// [`anitomy_results_free`], or NULL if `inputs` is NULL or (impossibly, given the
+/// core is panic-free) the parser panicked. A NULL or non-UTF-8 entry is treated
+/// as an empty string so the 1:1 input-to-result correspondence always holds.
+///
+/// # Safety
+///
+/// `inputs` must be NULL or a valid pointer to `count` pointers, each NULL or a
+/// valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn anitomy_parse_together(
+    inputs: *const *const c_char,
+    count: usize,
+    options: u32,
+) -> *mut AnitomyResults {
+    let parsed = panic::catch_unwind(AssertUnwindSafe(|| {
+        if inputs.is_null() {
+            return None;
+        }
+
+        // Copy the inputs out to owned strings first (substituting "" for NULL
+        // or invalid UTF-8) so the borrowed `&str` slice handed to the core
+        // keeps the length — and thus the index alignment — of the request.
+        let mut owned: Vec<String> = Vec::with_capacity(count);
+        for i in 0..count {
+            // SAFETY: the caller guarantees `inputs` points to `count` pointers.
+            let ptr = unsafe { *inputs.add(i) };
+            let text = if ptr.is_null() {
+                ""
+            } else {
+                // SAFETY: non-null per the check; caller guarantees NUL-terminated.
+                unsafe { CStr::from_ptr(ptr) }.to_str().unwrap_or("")
+            };
+            owned.push(text.to_string());
+        }
+        let refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+
+        let results = anitomy_ng::parse_together(&refs, options_from_bits(options))
+            .into_iter()
+            .map(|elements| {
+                let items = elements
+                    .into_iter()
+                    .map(|e| CElement {
+                        kind: kind_to_u32(e.kind),
+                        value: CString::new(e.value).unwrap_or_default(),
+                        position: e.position,
+                    })
+                    .collect();
+                AnitomyResult { items }
+            })
+            .collect();
+        Some(Box::new(AnitomyResults { results }))
+    }));
+
+    match parsed {
+        Ok(Some(results)) => Box::into_raw(results),
+        _ => ptr::null_mut(),
+    }
+}
+
+/// The number of results in the handle — equal to the input count (0 if NULL).
+///
+/// # Safety
+///
+/// `results` must be NULL or a live handle from [`anitomy_parse_together`].
+#[no_mangle]
+pub unsafe extern "C" fn anitomy_results_len(results: *const AnitomyResults) -> usize {
+    // SAFETY: forwarded to the caller's contract on `results`.
+    unsafe { results.as_ref() }.map_or(0, |b| b.results.len())
+}
+
+/// Borrows the result for input `index`, valid until `results` is freed — read it
+/// with the usual `anitomy_result_*` accessors. NULL if `results` is NULL or
+/// `index` is out of range. Do not pass the returned pointer to
+/// [`anitomy_result_free`]; it is owned by the results.
+///
+/// # Safety
+///
+/// `results` must be NULL or a live handle from [`anitomy_parse_together`].
+#[no_mangle]
+pub unsafe extern "C" fn anitomy_results_get(
+    results: *const AnitomyResults,
+    index: usize,
+) -> *const AnitomyResult {
+    // SAFETY: forwarded to the caller's contract on `results`.
+    unsafe { results.as_ref() }
+        .and_then(|b| b.results.get(index))
+        .map_or(ptr::null(), |r| r as *const AnitomyResult)
+}
+
+/// Frees a results handle returned by [`anitomy_parse_together`]. NULL is ignored. Never
+/// call this more than once on the same pointer.
+///
+/// # Safety
+///
+/// `results` must be NULL or a handle from [`anitomy_parse_together`] that has not
+/// already been freed.
+#[no_mangle]
+pub unsafe extern "C" fn anitomy_results_free(results: *mut AnitomyResults) {
+    if !results.is_null() {
+        // SAFETY: non-null and, per the contract, a live unfreed results handle.
+        drop(unsafe { Box::from_raw(results) });
+    }
+}
+
 /// This crate's version as a `'static` NUL-terminated string; must not be freed.
 #[no_mangle]
 pub extern "C" fn anitomy_version() -> *const c_char {
@@ -416,5 +535,75 @@ mod tests {
             .to_str()
             .unwrap()
             .is_empty());
+    }
+
+    /// Reads the (kind_name, value) pairs of one borrowed sub-result.
+    unsafe fn read_pairs(result: *const AnitomyResult) -> Vec<(String, String)> {
+        let len = unsafe { anitomy_result_len(result) };
+        (0..len)
+            .map(|j| {
+                let name =
+                    unsafe { CStr::from_ptr(anitomy_kind_name(anitomy_result_kind(result, j))) }
+                        .to_str()
+                        .unwrap()
+                        .to_owned();
+                let value = unsafe { CStr::from_ptr(anitomy_result_value(result, j)) }
+                    .to_str()
+                    .unwrap()
+                    .to_owned();
+                (name, value)
+            })
+            .collect()
+    }
+
+    /// Batches a directory-range + per-file-CRC set through the extern "C"
+    /// surface: each sub-result recovers the real episode and drops the range.
+    #[test]
+    fn parse_together_round_trip() {
+        unsafe {
+            let a = c"Show (01-12)/[G] Show - 01 [DEADBEEF].mkv";
+            let b = c"Show (01-12)/[G] Show - 02 [12AB34CD].mkv";
+            let inputs = [a.as_ptr(), b.as_ptr()];
+
+            let results =
+                anitomy_parse_together(inputs.as_ptr(), inputs.len(), anitomy_options_default());
+            assert!(!results.is_null());
+            assert_eq!(anitomy_results_len(results), 2);
+
+            for (i, want_ep) in [(0usize, "01"), (1, "02")] {
+                let result = anitomy_results_get(results, i);
+                assert!(!result.is_null());
+                let pairs = read_pairs(result);
+                let episodes: Vec<&str> = pairs
+                    .iter()
+                    .filter(|(k, _)| k == "episode")
+                    .map(|(_, v)| v.as_str())
+                    .collect();
+                assert_eq!(episodes, [want_ep]);
+                assert!(pairs.iter().any(|(k, v)| k == "title" && v == "Show"));
+            }
+
+            anitomy_results_free(results);
+        }
+    }
+
+    #[test]
+    fn results_null_and_oob_are_safe() {
+        unsafe {
+            assert!(anitomy_parse_together(ptr::null(), 0, anitomy_options_default()).is_null());
+            assert_eq!(anitomy_results_len(ptr::null()), 0);
+            assert!(anitomy_results_get(ptr::null(), 0).is_null());
+            anitomy_results_free(ptr::null_mut()); // no-op, must not crash
+
+            // A NULL entry degrades to "" but the count is still preserved 1:1.
+            let ok = c"[G] Show - 07.mkv";
+            let inputs = [ok.as_ptr(), ptr::null()];
+            let results =
+                anitomy_parse_together(inputs.as_ptr(), inputs.len(), anitomy_options_default());
+            assert_eq!(anitomy_results_len(results), 2);
+            assert!(!anitomy_results_get(results, 0).is_null());
+            assert!(anitomy_results_get(results, 5).is_null());
+            anitomy_results_free(results);
+        }
     }
 }

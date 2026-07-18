@@ -10,7 +10,7 @@ const assert = require("node:assert");
 const path = require("node:path");
 
 const pkgDir = process.argv[2] || path.join(__dirname, "..", "..", "dist-npm");
-const { parse } = require(path.join(pkgDir, "node", "anitomy_ng.js"));
+const { parse, parse_together } = require(path.join(pkgDir, "node", "anitomy_ng.js"));
 
 const name =
   "[TaigaSubs] Toradora! (2008) - 01v2 [1280x720 H.264 FLAC][1234ABCD].mkv";
@@ -42,6 +42,19 @@ const unicode = parse("[グループ] 進撃の巨人 - 05 [1080p].mkv");
 assert(
   unicode.some((e) => e.kind === "episode" && e.value === "05"),
   "unicode filename should still yield episode 05",
+);
+
+// Batch: the shared context recovers the real per-file episode that a
+// directory range would otherwise swallow, and returns one list per input.
+const batch = parse_together([
+  "Show (01-12)/[G] Show - 01 [DEADBEEF].mkv",
+  "Show (01-12)/[G] Show - 02 [12AB34CD].mkv",
+]);
+assert(Array.isArray(batch) && batch.length === 2, "batch should return one list per input");
+assert(
+  batch[0].some((e) => e.kind === "episode" && e.value === "01") &&
+    batch[1].some((e) => e.kind === "episode" && e.value === "02"),
+  "batch should recover the real per-file episodes",
 );
 
 console.log(`smoke test passed (${elements.length} elements parsed)`);

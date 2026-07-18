@@ -111,10 +111,31 @@ fn parse(filename: &str, options: Option<Options>) -> Vec<RawElement> {
         .collect()
 }
 
+#[pyfunction]
+#[pyo3(signature = (filenames, options=None))]
+fn parse_together(filenames: Vec<String>, options: Option<Options>) -> Vec<Vec<RawElement>> {
+    let opts: anitomy_ng::Options = options.unwrap_or_default().into();
+    let refs: Vec<&str> = filenames.iter().map(String::as_str).collect();
+    anitomy_ng::parse_together(&refs, opts)
+        .into_iter()
+        .map(|elements| {
+            elements
+                .into_iter()
+                .map(|e| RawElement {
+                    kind: e.kind.as_str().to_string(),
+                    value: e.value,
+                    position: e.position,
+                })
+                .collect()
+        })
+        .collect()
+}
+
 #[pymodule]
 fn _anitomy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Options>()?;
     m.add_class::<RawElement>()?;
     m.add_function(wrap_pyfunction!(parse, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_together, m)?)?;
     Ok(())
 }

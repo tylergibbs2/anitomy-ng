@@ -34,9 +34,11 @@
 mod detail;
 mod element;
 mod options;
+mod together;
 
 pub use element::{Element, ElementKind, ParseElementKindError};
 pub use options::Options;
+pub use together::parse_together;
 
 /// Port of the free function `anitomy::parse` in `include/anitomy.hpp`.
 ///
