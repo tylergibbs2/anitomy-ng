@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "anitomy-js"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anitomy-ng",
  "serde",
@@ -24,7 +24,7 @@ dependencies = [
 
 [[package]]
 name = "anitomy-ng"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "clap",
  "regex",
@@ -34,7 +34,7 @@ dependencies = [
 
 [[package]]
 name = "anitomy-ng-c"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anitomy-ng",
  "cbindgen",
@@ -42,7 +42,7 @@ dependencies = [
 
 [[package]]
 name = "anitomy-ng-py"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anitomy-ng",
  "pyo3",
