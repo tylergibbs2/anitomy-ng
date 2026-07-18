@@ -412,14 +412,52 @@
   {
     "input": "Fujimoto Tatsuki 17-26 E01 [1080p][E-AC-3][GerJapDub][GerEngSub][Web-DL].mkv",
     "source": "github.com/tylergibbs2/anitomy-ng/issues/2",
-    "note": "TARGET (issue #2, same as erengy/anitomy #36). The bare range `17-26` is title text and the marked `E01` is the real episode. Marker priority: when a marked episode (E##/#/SxxExx) is present, a bare unmarked range is not promoted to episode, so it falls back into the title.",
+    "note": "TARGET (issue #2, same as erengy/anitomy #36; audio-term half is issue #4). Bare range `17-26` is title text; marked `E01` is the episode (a marked episode blocks promoting a bare range). `GerJapDub` is a `<lang-code>+Dub` audio term, matched generically rather than as the release group.",
     "output": {
       "title": "Fujimoto Tatsuki 17-26",
       "episode": "01",
       "video_resolution": "1080p",
-      "audio_term": "E-AC-3",
-      "release_group": "GerJapDub",
+      "audio_term": ["E-AC-3", "GerJapDub"],
       "subtitles": "GerEngSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Boukensha ni Naritai E03 [1080p][AAC][KorChiDub][GerEngJapSub][Web-DL].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/4",
+    "note": "Issue #4: multi-code dub/sub tags matched generically. `KorChiDub` is audio, the triple-code `GerEngJapSub` is subtitles — neither is enumerated as a keyword.",
+    "output": {
+      "title": "Boukensha ni Naritai",
+      "episode": "03",
+      "video_resolution": "1080p",
+      "audio_term": ["AAC", "KorChiDub"],
+      "subtitles": "GerEngJapSub",
+      "source": "Web-DL",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[HorribleSubs] Show - 01 [1080p].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/4",
+    "note": "Adversarial guard for issue #4: a release group ending in `Subs` must not be reclassified as a subtitle tag — `horrible` isn't a run of three-letter language codes.",
+    "output": {
+      "release_group": "HorribleSubs",
+      "title": "Show",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Show E01 [1080p][GerEnSub][Web-DL].mkv",
+    "source": "github.com/tylergibbs2/anitomy-ng/issues/4",
+    "note": "Adversarial guard for issue #4: `GerEn` is five letters, not whole three-letter codes, so `GerEnSub` is not a language tag and stays the (unenclosed-bracket) release group.",
+    "output": {
+      "title": "Show",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "release_group": "GerEnSub",
       "source": "Web-DL",
       "file_extension": "mkv"
     }

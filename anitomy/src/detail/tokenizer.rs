@@ -73,6 +73,14 @@ fn next_token(chars: &[char], pos: &mut usize) -> Option<Token> {
             ..Token::default()
         });
     }
+    if let Some((value, keyword)) = take_composite_language(chars, pos) {
+        return Some(Token {
+            kind: TokenKind::Keyword,
+            value,
+            keyword: Some(keyword),
+            ..Token::default()
+        });
+    }
 
     Some(Token {
         kind: TokenKind::Text,
@@ -130,9 +138,7 @@ fn take_text(chars: &[char], pos: &mut usize) -> String {
 }
 
 fn take_keyword(chars: &[char], pos: &mut usize) -> Option<(String, Keyword)> {
-    let key = find_key(chars, *pos)?;
-    let n = key.chars().count();
-    let keyword = keyword::get(&key)?;
+    let (n, keyword) = find_key(chars, *pos)?;
 
     if !is_keyword_boundary(chars, pos.saturating_add(n), &keyword) {
         return None;
@@ -141,24 +147,42 @@ fn take_keyword(chars: &[char], pos: &mut usize) -> Option<(String, Keyword)> {
     Some((take(chars, pos, n), keyword))
 }
 
-/// Longest prefix (starting at `start`) that is an exact keyword match,
-/// searched incrementally so we can bail out as soon as no known keyword
-/// could possibly match a longer prefix.
-fn find_key(chars: &[char], start: usize) -> Option<String> {
-    let remaining_len = chars.len().saturating_sub(start);
-    let mut key = None;
+/// Matches a composite `<lang-code>+Sub/Dub` tag (e.g. `GerJapDub`) against the
+/// maximal text run at `pos` — the same span `take_text` would take — so it
+/// only matches a whole word. Runs after `take_keyword`, so real keywords win.
+fn take_composite_language(chars: &[char], pos: &mut usize) -> Option<(String, Keyword)> {
+    let n = chars
+        .iter()
+        .skip(*pos)
+        .take_while(|&&c| is_text_char(c))
+        .count();
+    // Every composite tag ends in `sub(s)`/`dub(s)`; skip the alloc otherwise.
+    if !matches!(chars.get(*pos + n - 1)?.to_ascii_lowercase(), 'b' | 's') {
+        return None;
+    }
+    let run: String = chars.iter().skip(*pos).take(n).collect();
+    let keyword = keyword::get_composite(&run)?;
+    Some((take(chars, pos, n), keyword))
+}
 
-    for n in 1..=remaining_len {
-        let prefix: String = chars.iter().skip(start).take(n).collect();
-        if keyword::get(&prefix).is_some() {
-            key = Some(prefix.clone());
+/// Longest keyword match at `start`, as `(char length, keyword)`. Grows a
+/// reused lowercased buffer one char at a time, bailing once no known keyword
+/// shares the current prefix.
+fn find_key(chars: &[char], start: usize) -> Option<(usize, Keyword)> {
+    let mut best = None;
+    let mut lower = String::new();
+
+    for (i, &ch) in chars.iter().enumerate().skip(start) {
+        lower.push(ch.to_ascii_lowercase());
+        if let Some(keyword) = keyword::get_lower(&lower) {
+            best = Some((i - start + 1, keyword));
         }
-        if !keyword::has_prefix(&prefix) {
+        if !keyword::has_prefix_lower(&lower) {
             break;
         }
     }
 
-    key
+    best
 }
 
 fn is_keyword_boundary(chars: &[char], start: usize, keyword: &Keyword) -> bool {

@@ -57,6 +57,10 @@ const SUBWORD: u8 = 1 << 1;
 const PREFIX_FOR_NUMBER: u8 = 1 << 2;
 const PREFIX_FOR_OTHER: u8 = 1 << 3;
 
+/// Three-letter fansub language codes, lowercased. Combine with a `Sub`/`Dub`
+/// suffix to form a subtitle/audio-language tag (see [`get_composite`]).
+const LANGUAGE_CODES: &[&str] = &["chi", "eng", "ger", "jap", "kor"];
+
 fn make_keyword(kind: KeywordKind, flags: u8) -> Keyword {
     Keyword {
         kind,
@@ -116,13 +120,11 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("Dub", 0),
             ("Dubbed", 0),
             ("Dubs", 0),
-            ("ChiDub", 0),
+            // `<lang-code>Dub` tags (`GerDub`, `GerJapDub`, ...): see `get_composite`.
+            // Only the spelled-out forms remain here.
             ("Chinese Dub", 0),
-            ("EngDub", 0),
             ("English Dub", 0),
-            ("GerDub", 0),
             ("German Dub", 0),
-            ("JapDub", 0),
             ("Japanese Dub", 0),
             ("Korean Dub", 0),
         ]),
@@ -295,18 +297,7 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("Multi Subs", 0),
             ("Multiple Subtitle", 0),
         ]),
-        (SubtitleLanguage, &[
-            ("EngSub", 0),
-            ("EngSubs", 0),
-            ("GerSub", 0),
-            // Combined dual-language sub tags common in German fansub releases.
-            // Without these the tag falls through to release_group (e.g.
-            // "[...][GerEngSub][Web-DL]" mislabeled the group).
-            ("GerEngSub", 0),
-            ("GerEngSubs", 0),
-            ("EngGerSub", 0),
-            ("EngGerSubs", 0),
-        ]),
+        // `<lang-code>+Sub` tags (`GerSub`, `GerEngSub`, ...): see `get_composite`.
 
         // Type
         (Type, &[
@@ -429,15 +420,50 @@ fn keywords() -> &'static HashMap<String, Keyword> {
     MAP.get_or_init(build_map)
 }
 
-/// Exact, case-insensitive lookup.
-pub(crate) fn get(word: &str) -> Option<Keyword> {
-    keywords().get(&word.to_ascii_lowercase()).copied()
+/// Exact keyword lookup; `lower` must already be ASCII-lowercased.
+pub(crate) fn get_lower(lower: &str) -> Option<Keyword> {
+    keywords().get(lower).copied()
+}
+
+/// Whether any known keyword starts with `lower` (which must already be
+/// ASCII-lowercased). Answers in one hash lookup; the tokenizer calls it once
+/// per character while growing a candidate keyword.
+pub(crate) fn has_prefix_lower(lower: &str) -> bool {
+    prefixes().contains(lower)
+}
+
+/// Matches `(<code>)+ Sub|Subs|Dub|Dubs` generically instead of enumerating
+/// every combination as a keyword. Returns a synthetic `SubtitleLanguage`
+/// (`Sub`) or `AudioLanguage` (`Dub`) keyword when `word` is one or more
+/// [`LANGUAGE_CODES`] plus such a suffix (e.g. `GerSub`, `GerJapDub`).
+pub(crate) fn get_composite(word: &str) -> Option<Keyword> {
+    let lower = word.to_ascii_lowercase();
+    let (codes, kind) = if let Some(rest) = strip_suffix_any(&lower, &["subs", "sub"]) {
+        (rest, KeywordKind::SubtitleLanguage)
+    } else if let Some(rest) = strip_suffix_any(&lower, &["dubs", "dub"]) {
+        (rest, KeywordKind::AudioLanguage)
+    } else {
+        return None;
+    };
+    // Prefix must be a non-empty run of whole three-letter codes.
+    if codes.is_empty() || codes.len() % 3 != 0 {
+        return None;
+    }
+    let all_codes = codes
+        .as_bytes()
+        .chunks(3)
+        .all(|c| std::str::from_utf8(c).is_ok_and(|s| LANGUAGE_CODES.contains(&s)));
+    all_codes.then(|| make_keyword(kind, 0))
+}
+
+/// Returns `word` without the first matching suffix in `suffixes` (tried in
+/// order, so list longer suffixes first).
+fn strip_suffix_any<'a>(word: &'a str, suffixes: &[&str]) -> Option<&'a str> {
+    suffixes.iter().find_map(|s| word.strip_suffix(s))
 }
 
 /// Every (lowercased) prefix of every known keyword, including the empty
-/// string and each full key. Lets [`has_prefix`] answer in a single hash
-/// lookup instead of scanning the whole keyword table on each call — the
-/// tokenizer queries it once per character while growing a candidate keyword.
+/// string and each full key. Backs [`has_prefix_lower`].
 fn prefixes() -> &'static HashSet<String> {
     static PREFIXES: OnceLock<HashSet<String>> = OnceLock::new();
     PREFIXES.get_or_init(|| {
@@ -454,11 +480,4 @@ fn prefixes() -> &'static HashSet<String> {
         }
         set
     })
-}
-
-/// Whether any known keyword starts with `prefix` (case-insensitive). Used
-/// by the tokenizer to find the longest valid keyword at a given position
-/// without scanning the whole table character-by-character from scratch.
-pub(crate) fn has_prefix(prefix: &str) -> bool {
-    prefixes().contains(&prefix.to_ascii_lowercase())
 }
