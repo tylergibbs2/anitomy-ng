@@ -61,7 +61,7 @@ pub(super) fn parse_part(tokens: &mut [Token]) -> Option<Element> {
         {
             if let Some((value, position)) = tokens
                 .get(keyword_idx - 2)
-                .map(|t| (t.value.clone(), t.position))
+                .map(|t| (t.value, t.position))
             {
                 if let Some(number) = from_ordinal_number(&value) {
                     mark(tokens, keyword_idx - 2, ElementKind::Part);
@@ -98,7 +98,7 @@ pub(super) fn parse_part(tokens: &mut [Token]) -> Option<Element> {
         if !tokens.get(idx).is_some_and(is_free_token) {
             continue;
         }
-        let Some((value, position)) = tokens.get(idx).map(|t| (t.value.clone(), t.position)) else {
+        let Some((value, position)) = tokens.get(idx).map(|t| (t.value, t.position)) else {
             continue;
         };
         let Some(caps) = p_prefixed_pattern().captures(&value) else {

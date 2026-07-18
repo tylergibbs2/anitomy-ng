@@ -41,7 +41,7 @@ pub(super) fn parse_year(tokens: &mut [Token]) -> Option<Element> {
         token.element_kind = Some(ElementKind::Year);
         return Some(Element {
             kind: ElementKind::Year,
-            value: token.value.clone(),
+            value: token.value.to_string(),
             position: token.position,
         });
     }
@@ -58,7 +58,7 @@ pub(super) fn parse_year(tokens: &mut [Token]) -> Option<Element> {
     token.element_kind = Some(ElementKind::Year);
     Some(Element {
         kind: ElementKind::Year,
-        value: token.value.clone(),
+        value: token.value.to_string(),
         position: token.position,
     })
 }

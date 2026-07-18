@@ -20,7 +20,7 @@ pub(crate) fn element_from_token(
         kind,
         value: value
             .map(str::to_string)
-            .unwrap_or_else(|| token.value.clone()),
+            .unwrap_or_else(|| token.value.to_string()),
         position: position.unwrap_or(token.position),
     }
 }

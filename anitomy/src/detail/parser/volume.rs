@@ -67,7 +67,7 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
         if !is_free_token(token) {
             break;
         }
-        let value = token.value.clone();
+        let value = token.value;
         let position = token.position;
 
         // Groups below are all mandatory in their patterns, so `if let Some`
@@ -93,7 +93,7 @@ pub(super) fn parse_volume(tokens: &mut [Token]) -> Vec<Element> {
                 if let Some(second) = tokens.get(second_idx) {
                     elements.push(Element {
                         kind: ElementKind::Volume,
-                        value: second.value.clone(),
+                        value: second.value.to_string(),
                         position,
                     });
                     mark(tokens, second_idx, ElementKind::Volume);

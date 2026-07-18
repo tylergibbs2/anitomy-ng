@@ -54,12 +54,12 @@ fn is_allowed(token: &Token, options: &Options) -> bool {
 /// `v2` -> `2`, otherwise unchanged.
 fn token_value(token: &Token) -> String {
     let Some(keyword) = token.keyword else {
-        return token.value.clone();
+        return token.value.to_string();
     };
     if keyword.kind == KeywordKind::ReleaseVersion {
         token.value.chars().skip(1).collect()
     } else {
-        token.value.clone()
+        token.value.to_string()
     }
 }
 

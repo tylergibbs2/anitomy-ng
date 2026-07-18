@@ -28,7 +28,7 @@ fn add_element_from_token(tokens: &mut [Token], idx: usize, elements: &mut Vec<E
     if let Some(token) = tokens.get(idx) {
         elements.push(Element {
             kind: ElementKind::Episode,
-            value: token.value.clone(),
+            value: token.value.to_string(),
             position: token.position,
         });
     }
@@ -205,7 +205,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
         if !tokens.get(idx).is_some_and(is_free_token) {
             continue;
         }
-        let Some(value) = tokens.get(idx).map(|t| t.value.clone()) else {
+        let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
         let Some(m1) = match_episode_token(&value) else {
@@ -240,7 +240,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             .filter(|t| is_episode_delimiter(t))
             .and_then(|_| {
                 let after_idx = idx + 2;
-                let after_value = tokens.get(after_idx)?.value.clone();
+                let after_value = tokens.get(after_idx)?.value;
                 let m2 = match_episode_token(&after_value)?;
                 // A both-single-digit range glued to a title (`1-2`, `1+2`) is
                 // title numbering, not a batch. A real batch reaches double
@@ -309,7 +309,7 @@ fn parse_separated_episodes(tokens: &mut [Token], elements: &mut Vec<Element>) -
         let search_start = idx + 1;
         let Some(sep_idx) = tokens.get(search_start..).and_then(|s| {
             s.iter()
-                .position(|t| matches!(t.value.as_str(), "&" | "~" | "of"))
+                .position(|t| matches!(t.value, "&" | "~" | "of"))
                 .map(|i| search_start + i)
         }) else {
             continue;
@@ -362,7 +362,7 @@ fn parse_fractional_episode(tokens: &mut [Token], elements: &mut Vec<Element>) -
             continue;
         }
 
-        let Some((number_value, position)) = tokens.get(i).map(|t| (t.value.clone(), t.position))
+        let Some((number_value, position)) = tokens.get(i).map(|t| (t.value, t.position))
         else {
             continue;
         };
@@ -387,7 +387,7 @@ fn parse_japanese_counter(tokens: &mut [Token], elements: &mut Vec<Element>) -> 
         if !tokens.get(idx).is_some_and(is_free_token) {
             continue;
         }
-        let Some(value) = tokens.get(idx).map(|t| t.value.clone()) else {
+        let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
         let Some(caps) = japanese_episode_counter_pattern().captures(&value) else {
@@ -535,7 +535,7 @@ fn parse_partial_episode(tokens: &mut [Token], elements: &mut Vec<Element>) -> b
         let Some(value) = tokens
             .get(idx)
             .filter(|t| is_free_token(t))
-            .map(|t| t.value.clone())
+            .map(|t| t.value)
         else {
             continue;
         };
@@ -633,7 +633,7 @@ fn parse_last_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool 
         let next = find_next_token(tokens, idx, is_not_delimiter_token);
 
         if let Some(p) = prev {
-            let Some(value) = tokens.get(p).map(|t| t.value.clone()) else {
+            let Some(value) = tokens.get(p).map(|t| t.value) else {
                 continue;
             };
             if equal_ignore_ascii_case(&value, "Cour") || equal_ignore_ascii_case(&value, "Part") {

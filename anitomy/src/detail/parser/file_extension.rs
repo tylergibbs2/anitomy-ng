@@ -42,7 +42,7 @@ pub(super) fn parse_file_extension(tokens: &mut [Token]) -> Option<Element> {
 
     Some(Element {
         kind: ElementKind::FileExtension,
-        value: token.value.clone(),
+        value: token.value.to_string(),
         position: token.position,
     })
 }

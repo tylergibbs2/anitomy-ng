@@ -20,9 +20,9 @@ pub(crate) enum TokenKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub(crate) struct Token {
+pub(crate) struct Token<'a> {
     pub kind: TokenKind,
-    pub value: String,
+    pub value: &'a str,
     pub keyword: Option<Keyword>,
     pub element_kind: Option<ElementKind>,
     /// Index (in codepoints) in the input string.

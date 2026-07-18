@@ -31,7 +31,7 @@ pub(super) fn parse_video_resolution(tokens: &mut [Token]) -> Vec<Element> {
         token.element_kind = Some(ElementKind::VideoResolution);
         elements.push(Element {
             kind: ElementKind::VideoResolution,
-            value: token.value.clone(),
+            value: token.value.to_string(),
             position: token.position,
         });
     }
@@ -41,12 +41,12 @@ pub(super) fn parse_video_resolution(tokens: &mut [Token]) -> Vec<Element> {
     // its own fixture wants a bare `720` resolved the same way as `1080`.
     if elements.is_empty() {
         if let Some(token) = tokens.iter_mut().find(|t| {
-            is_free_token(t) && is_numeric_token(t) && matches!(t.value.as_str(), "1080" | "720")
+            is_free_token(t) && is_numeric_token(t) && matches!(t.value, "1080" | "720")
         }) {
             token.element_kind = Some(ElementKind::VideoResolution);
             elements.push(Element {
                 kind: ElementKind::VideoResolution,
-                value: token.value.clone(),
+                value: token.value.to_string(),
                 position: token.position,
             });
         }

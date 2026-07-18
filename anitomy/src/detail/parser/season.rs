@@ -47,7 +47,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
                 && tokens.get(i + 1).is_some_and(is_delimiter_token)
                 && tokens.get(i).is_some_and(is_free_token);
             if ends_with_season {
-                if let Some(value) = tokens.get(i).map(|t| t.value.clone()) {
+                if let Some(value) = tokens.get(i).map(|t| t.value) {
                     if let Some(number) = from_ordinal_number(&value) {
                         let position = tokens.get(i).map_or(0, |t| t.position);
                         mark(tokens, i, ElementKind::Season);
@@ -68,12 +68,12 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             if starts_with_season {
                 if let Some((is_numeric, value, position)) = tokens
                     .get(i + 2)
-                    .map(|t| (is_numeric_token(t), t.value.clone(), t.position))
+                    .map(|t| (is_numeric_token(t), t.value, t.position))
                 {
                     let resolved = if is_numeric {
-                        Some(value.clone())
+                        Some(value.to_string())
                     } else {
-                        from_roman_number(&value).map(str::to_string)
+                        from_roman_number(value).map(str::to_string)
                     };
                     if let Some(value) = resolved {
                         mark(tokens, i, ElementKind::Season);
@@ -93,7 +93,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
                                 .is_some_and(|t| is_free_token(t) && is_numeric_token(t))
                         {
                             if let Some((v2, p2)) =
-                                tokens.get(i + 4).map(|t| (t.value.clone(), t.position))
+                                tokens.get(i + 4).map(|t| (t.value.to_string(), t.position))
                             {
                                 mark(tokens, i + 4, ElementKind::Season);
                                 elements.push(Element {
@@ -121,7 +121,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
         if !tokens.get(idx).is_some_and(is_free_token) {
             continue;
         }
-        let Some(value) = tokens.get(idx).map(|t| t.value.clone()) else {
+        let Some(value) = tokens.get(idx).map(|t| t.value) else {
             continue;
         };
         let Some(caps) = s_prefixed_pattern().captures(&value) else {
@@ -157,7 +157,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             continue;
         }
         if let Some((value2, position2)) =
-            tokens.get(next2_idx).map(|t| (t.value.clone(), t.position))
+            tokens.get(next2_idx).map(|t| (t.value.to_string(), t.position))
         {
             mark(tokens, next2_idx, ElementKind::Season);
             elements.push(Element {
@@ -175,7 +175,7 @@ pub(super) fn parse_season(tokens: &mut [Token]) -> Vec<Element> {
             if !tokens.get(idx).is_some_and(is_free_token) {
                 continue;
             }
-            let Some(value) = tokens.get(idx).map(|t| t.value.clone()) else {
+            let Some(value) = tokens.get(idx).map(|t| t.value) else {
                 continue;
             };
             let Some(caps) = japanese_counter_pattern().captures(&value) else {

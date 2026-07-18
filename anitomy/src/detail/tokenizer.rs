@@ -19,12 +19,17 @@ use super::keyword::{self, Keyword};
 use super::token::{Token, TokenKind};
 use crate::options::Options;
 
-pub(crate) fn tokenize(input: &str, _options: &Options) -> Vec<Token> {
+pub(crate) fn tokenize<'a>(input: &'a str, _options: &Options) -> Vec<Token<'a>> {
     let chars: Vec<char> = input.chars().collect();
+    // Byte offset of each char, plus a sentinel of `input.len()`, so a token
+    // spanning char range `start..end` slices as `input[offsets[start]..offsets[end]]`.
+    let mut offsets: Vec<usize> = input.char_indices().map(|(i, _)| i).collect();
+    offsets.push(input.len());
+
     let mut pos = 0usize;
     let mut tokens = Vec::new();
 
-    while let Some(token) = next_token(&chars, &mut pos) {
+    while let Some(token) = next_token(input, &chars, &offsets, &mut pos) {
         tokens.push(token);
     }
 
@@ -41,31 +46,36 @@ fn is_word_boundary(ch: char) -> bool {
     !is_text_char(ch)
 }
 
-fn next_token(chars: &[char], pos: &mut usize) -> Option<Token> {
+fn next_token<'a>(
+    input: &'a str,
+    chars: &[char],
+    offsets: &[usize],
+    pos: &mut usize,
+) -> Option<Token<'a>> {
     let ch = chars.get(*pos).copied()?;
 
     if is_open_bracket(ch) {
         return Some(Token {
             kind: TokenKind::OpenBracket,
-            value: take(chars, pos, 1),
+            value: take(input, offsets, pos, 1),
             ..Token::default()
         });
     }
     if is_close_bracket(ch) {
         return Some(Token {
             kind: TokenKind::CloseBracket,
-            value: take(chars, pos, 1),
+            value: take(input, offsets, pos, 1),
             ..Token::default()
         });
     }
     if is_delimiter(ch) {
         return Some(Token {
             kind: TokenKind::Delimiter,
-            value: take(chars, pos, 1),
+            value: take(input, offsets, pos, 1),
             ..Token::default()
         });
     }
-    if let Some((value, keyword)) = take_keyword(chars, pos) {
+    if let Some((value, keyword)) = take_keyword(input, chars, offsets, pos) {
         return Some(Token {
             kind: TokenKind::Keyword,
             value,
@@ -73,7 +83,7 @@ fn next_token(chars: &[char], pos: &mut usize) -> Option<Token> {
             ..Token::default()
         });
     }
-    if let Some((value, keyword)) = take_composite_language(chars, pos) {
+    if let Some((value, keyword)) = take_composite_language(input, chars, offsets, pos) {
         return Some(Token {
             kind: TokenKind::Keyword,
             value,
@@ -84,7 +94,7 @@ fn next_token(chars: &[char], pos: &mut usize) -> Option<Token> {
 
     Some(Token {
         kind: TokenKind::Text,
-        value: take_text(chars, pos),
+        value: take_text(input, chars, offsets, pos),
         ..Token::default()
     })
 }
@@ -120,49 +130,68 @@ fn process_tokens(tokens: &mut [Token]) {
     }
 }
 
-/// Consumes and returns the next `n` chars from `pos` onward (fewer if
-/// there aren't `n` left — never panics).
-fn take(chars: &[char], pos: &mut usize, n: usize) -> String {
-    let taken: String = chars.iter().skip(*pos).take(n).collect();
-    *pos += taken.chars().count();
-    taken
+/// Consumes the next `n` chars from `pos` onward (fewer if there aren't `n`
+/// left) and returns them as a slice of `input` — never panics.
+fn take<'a>(input: &'a str, offsets: &[usize], pos: &mut usize, n: usize) -> &'a str {
+    let start = *pos;
+    let end = start.saturating_add(n).min(offsets.len().saturating_sub(1));
+    *pos = end;
+    match (offsets.get(start), offsets.get(end)) {
+        (Some(&b0), Some(&b1)) => input.get(b0..b1).unwrap_or_default(),
+        _ => "",
+    }
 }
 
-fn take_text(chars: &[char], pos: &mut usize) -> String {
+fn take_text<'a>(input: &'a str, chars: &[char], offsets: &[usize], pos: &mut usize) -> &'a str {
     let n = chars
         .iter()
         .skip(*pos)
         .take_while(|&&c| is_text_char(c))
         .count();
-    take(chars, pos, n)
+    take(input, offsets, pos, n)
 }
 
-fn take_keyword(chars: &[char], pos: &mut usize) -> Option<(String, Keyword)> {
+fn take_keyword<'a>(
+    input: &'a str,
+    chars: &[char],
+    offsets: &[usize],
+    pos: &mut usize,
+) -> Option<(&'a str, Keyword)> {
     let (n, keyword) = find_key(chars, *pos)?;
 
     if !is_keyword_boundary(chars, pos.saturating_add(n), &keyword) {
         return None;
     }
 
-    Some((take(chars, pos, n), keyword))
+    Some((take(input, offsets, pos, n), keyword))
 }
 
 /// Matches a composite `<lang-code>+Sub/Dub` tag (e.g. `GerJapDub`) against the
 /// maximal text run at `pos` — the same span `take_text` would take — so it
 /// only matches a whole word. Runs after `take_keyword`, so real keywords win.
-fn take_composite_language(chars: &[char], pos: &mut usize) -> Option<(String, Keyword)> {
+fn take_composite_language<'a>(
+    input: &'a str,
+    chars: &[char],
+    offsets: &[usize],
+    pos: &mut usize,
+) -> Option<(&'a str, Keyword)> {
     let n = chars
         .iter()
         .skip(*pos)
         .take_while(|&&c| is_text_char(c))
         .count();
-    // Every composite tag ends in `sub(s)`/`dub(s)`; skip the alloc otherwise.
-    if !matches!(chars.get(*pos + n - 1)?.to_ascii_lowercase(), 'b' | 's') {
+    // Every composite tag ends in `sub(s)`/`dub(s)`; skip the lookup otherwise.
+    if !matches!(
+        chars.get(*pos + n.checked_sub(1)?)?.to_ascii_lowercase(),
+        'b' | 's'
+    ) {
         return None;
     }
-    let run: String = chars.iter().skip(*pos).take(n).collect();
-    let keyword = keyword::get_composite(&run)?;
-    Some((take(chars, pos, n), keyword))
+    let end = *pos + n;
+    let run = input.get(*offsets.get(*pos)?..*offsets.get(end)?)?;
+    let keyword = keyword::get_composite(run)?;
+    *pos = end;
+    Some((run, keyword))
 }
 
 /// Longest keyword match at `start`, as `(char length, keyword)`. Grows a
