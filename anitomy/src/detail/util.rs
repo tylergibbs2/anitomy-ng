@@ -10,6 +10,30 @@
 //! generic-iterator algorithm better expressed as `Iterator` combinators at
 //! each call site in Rust.
 
+use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasherDefault, Hasher};
+
+/// FxHash: a fast non-cryptographic hasher for short ASCII keys, where the
+/// default SipHash's per-lookup overhead would dominate (e.g. the tokenizer's
+/// keyword scan, which hashes a prefix on every character).
+#[derive(Default)]
+pub(crate) struct FxHasher(u64);
+
+impl Hasher for FxHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        const SEED: u64 = 0x51_7c_c1_b7_27_22_0a_95;
+        for &b in bytes {
+            self.0 = (self.0.rotate_left(5) ^ u64::from(b)).wrapping_mul(SEED);
+        }
+    }
+    fn finish(&self) -> u64 {
+        self.0
+    }
+}
+
+pub(crate) type FxMap<K, V> = HashMap<K, V, BuildHasherDefault<FxHasher>>;
+pub(crate) type FxSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
+
 pub(crate) fn from_ordinal_number(input: &str) -> Option<&'static str> {
     Some(match input {
         "1st" | "First" => "1",

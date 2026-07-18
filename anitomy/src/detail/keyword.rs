@@ -10,8 +10,10 @@
 //! `KeywordEqual`, which only fold `A`-`Z`): keys are stored lowercased and
 //! queries are lowercased before lookup.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::OnceLock;
+
+use super::util::{FxMap, FxSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum KeywordKind {
@@ -56,10 +58,6 @@ const AMBIGUOUS: u8 = 1 << 0;
 const SUBWORD: u8 = 1 << 1;
 const PREFIX_FOR_NUMBER: u8 = 1 << 2;
 const PREFIX_FOR_OTHER: u8 = 1 << 3;
-
-/// Three-letter fansub language codes, lowercased. Combine with a `Sub`/`Dub`
-/// suffix to form a subtitle/audio-language tag (see [`get_composite`]).
-const LANGUAGE_CODES: &[&str] = &["chi", "eng", "ger", "jap", "kor"];
 
 fn make_keyword(kind: KeywordKind, flags: u8) -> Keyword {
     Keyword {
@@ -177,6 +175,19 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
             ("JPN", 0),
             ("PT-BR", 0),
             ("VOSTFR", 0),
+            // ISO-639-style three-letter codes common in multi-language
+            // release tags (e.g. `[FRE][GER][SPA]`). AMBIGUOUS -> recognized
+            // only when bracketed, so they never misfire on title words.
+            ("ARA", AMBIGUOUS),
+            ("CHI", AMBIGUOUS),
+            ("DEU", AMBIGUOUS),
+            ("FRA", AMBIGUOUS),
+            ("FRE", AMBIGUOUS),
+            ("GER", AMBIGUOUS),
+            ("KOR", AMBIGUOUS),
+            ("POR", AMBIGUOUS),
+            ("RUS", AMBIGUOUS),
+            ("SPA", AMBIGUOUS),
         ]),
 
         // Other
@@ -394,8 +405,8 @@ fn base_keywords() -> &'static [(KeywordKind, &'static [(&'static str, u8)])] {
     ]
 }
 
-fn build_map() -> HashMap<String, Keyword> {
-    let mut map = HashMap::new();
+fn build_map() -> FxMap<String, Keyword> {
+    let mut map = FxMap::default();
     for (kind, entries) in base_keywords() {
         for (value, flags) in *entries {
             let keyword = make_keyword(*kind, *flags);
@@ -415,8 +426,8 @@ fn build_map() -> HashMap<String, Keyword> {
     map
 }
 
-fn keywords() -> &'static HashMap<String, Keyword> {
-    static MAP: OnceLock<HashMap<String, Keyword>> = OnceLock::new();
+fn keywords() -> &'static FxMap<String, Keyword> {
+    static MAP: OnceLock<FxMap<String, Keyword>> = OnceLock::new();
     MAP.get_or_init(build_map)
 }
 
@@ -432,10 +443,32 @@ pub(crate) fn has_prefix_lower(lower: &str) -> bool {
     prefixes().contains(lower)
 }
 
+/// The three-letter `Language` keywords, lowercased — the single source of
+/// truth for language codes. [`get_composite`] draws its vocabulary from here,
+/// so adding a code to the `Language` table (e.g. `FRE`) also teaches the
+/// composite recognizer `FreSub`/`FreDub`, with no second list to keep in sync.
+fn language_codes() -> &'static HashSet<String> {
+    static CODES: OnceLock<HashSet<String>> = OnceLock::new();
+    CODES.get_or_init(|| {
+        let mut set = HashSet::new();
+        for (kind, entries) in base_keywords() {
+            if *kind != KeywordKind::Language {
+                continue;
+            }
+            for (value, _) in *entries {
+                if value.len() == 3 && value.bytes().all(|b| b.is_ascii_alphabetic()) {
+                    set.insert(value.to_ascii_lowercase());
+                }
+            }
+        }
+        set
+    })
+}
+
 /// Matches `(<code>)+ Sub|Subs|Dub|Dubs` generically instead of enumerating
 /// every combination as a keyword. Returns a synthetic `SubtitleLanguage`
 /// (`Sub`) or `AudioLanguage` (`Dub`) keyword when `word` is one or more
-/// [`LANGUAGE_CODES`] plus such a suffix (e.g. `GerSub`, `GerJapDub`).
+/// three-letter [`language_codes`] plus such a suffix (e.g. `GerSub`, `GerJapDub`).
 pub(crate) fn get_composite(word: &str) -> Option<Keyword> {
     let lower = word.to_ascii_lowercase();
     let (codes, kind) = if let Some(rest) = strip_suffix_any(&lower, &["subs", "sub"]) {
@@ -449,10 +482,11 @@ pub(crate) fn get_composite(word: &str) -> Option<Keyword> {
     if codes.is_empty() || codes.len() % 3 != 0 {
         return None;
     }
+    let known = language_codes();
     let all_codes = codes
         .as_bytes()
         .chunks(3)
-        .all(|c| std::str::from_utf8(c).is_ok_and(|s| LANGUAGE_CODES.contains(&s)));
+        .all(|c| std::str::from_utf8(c).is_ok_and(|s| known.contains(s)));
     all_codes.then(|| make_keyword(kind, 0))
 }
 
@@ -464,10 +498,10 @@ fn strip_suffix_any<'a>(word: &'a str, suffixes: &[&str]) -> Option<&'a str> {
 
 /// Every (lowercased) prefix of every known keyword, including the empty
 /// string and each full key. Backs [`has_prefix_lower`].
-fn prefixes() -> &'static HashSet<String> {
-    static PREFIXES: OnceLock<HashSet<String>> = OnceLock::new();
+fn prefixes() -> &'static FxSet<String> {
+    static PREFIXES: OnceLock<FxSet<String>> = OnceLock::new();
     PREFIXES.get_or_init(|| {
-        let mut set = HashSet::new();
+        let mut set = FxSet::default();
         for key in keywords().keys() {
             // Keys are already lowercased (see `build_map`); accumulate chars
             // so multi-byte prefixes land on char boundaries.
