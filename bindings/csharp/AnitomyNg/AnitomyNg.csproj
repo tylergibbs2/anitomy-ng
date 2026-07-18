@@ -14,7 +14,7 @@
 
     <!-- NuGet package metadata. Version is overridden in CI (-p:Version=…). -->
     <PackageId>AnitomyNg</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Tyler Gibbs</Authors>
     <Description>Anime video filename parser — .NET bindings for the anitomy-ng Rust crate. Prebuilt native binaries ship in the package, so consumers need no Rust toolchain.</Description>
     <PackageProjectUrl>https://github.com/tylergibbs2/anitomy-ng</PackageProjectUrl>
