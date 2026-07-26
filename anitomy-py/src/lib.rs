@@ -97,38 +97,37 @@ pub struct RawElement {
     pub position: usize,
 }
 
+fn raw(e: anitomy_ng::Element) -> RawElement {
+    RawElement {
+        kind: e.kind.as_str().to_string(),
+        value: e.value,
+        position: e.position,
+    }
+}
+
 #[pyfunction]
 #[pyo3(signature = (filename, options=None))]
-fn parse(filename: &str, options: Option<Options>) -> Vec<RawElement> {
+fn parse(py: Python<'_>, filename: &str, options: Option<Options>) -> Vec<RawElement> {
     let opts: anitomy_ng::Options = options.unwrap_or_default().into();
-    anitomy_ng::parse(filename, opts)
-        .into_iter()
-        .map(|e| RawElement {
-            kind: e.kind.as_str().to_string(),
-            value: e.value,
-            position: e.position,
-        })
-        .collect()
+    // Nothing in here touches Python, so let other threads run.
+    py.detach(|| anitomy_ng::parse(filename, opts).into_iter().map(raw).collect())
 }
 
 #[pyfunction]
 #[pyo3(signature = (filenames, options=None))]
-fn parse_together(filenames: Vec<String>, options: Option<Options>) -> Vec<Vec<RawElement>> {
+fn parse_together(
+    py: Python<'_>,
+    filenames: Vec<String>,
+    options: Option<Options>,
+) -> Vec<Vec<RawElement>> {
     let opts: anitomy_ng::Options = options.unwrap_or_default().into();
-    let refs: Vec<&str> = filenames.iter().map(String::as_str).collect();
-    anitomy_ng::parse_together(&refs, opts)
-        .into_iter()
-        .map(|elements| {
-            elements
-                .into_iter()
-                .map(|e| RawElement {
-                    kind: e.kind.as_str().to_string(),
-                    value: e.value,
-                    position: e.position,
-                })
-                .collect()
-        })
-        .collect()
+    py.detach(|| {
+        let refs: Vec<&str> = filenames.iter().map(String::as_str).collect();
+        anitomy_ng::parse_together(&refs, opts)
+            .into_iter()
+            .map(|elements| elements.into_iter().map(raw).collect())
+            .collect()
+    })
 }
 
 #[pymodule]
