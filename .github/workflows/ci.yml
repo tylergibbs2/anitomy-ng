@@ -19,7 +19,9 @@ jobs:
       # Lint the wasm binding too (compiles natively for the check); the actual
       # wasm build + smoke test live in wasm.yml.
       - run: cargo clippy -p anitomy-js --all-targets -- -D warnings
-      - run: cargo test -p anitomy-ng
+      # anitomy-ng-py excluded: extension-module leaves libpython unlinked at
+      # test time. Covered by python-test below.
+      - run: cargo test --workspace --exclude anitomy-ng-py --features anitomy-ng/cli
 
   python-test:
     strategy:

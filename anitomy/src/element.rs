@@ -24,6 +24,9 @@ macro_rules! element_kinds {
         }
 
         impl ElementKind {
+            /// Every variant, in declaration order.
+            pub const ALL: &'static [ElementKind] = &[$(ElementKind::$variant),+];
+
             pub fn as_str(self) -> &'static str {
                 match self {
                     $(ElementKind::$variant => $name),+

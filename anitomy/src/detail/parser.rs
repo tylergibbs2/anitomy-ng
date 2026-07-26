@@ -13,6 +13,7 @@
 //! header; `tests/conformance.rs` checks their combined output against the
 //! upstream and anitopy fixture suites.
 
+mod broadcast;
 mod episode;
 mod episode_title;
 mod file_checksum;
@@ -42,6 +43,7 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
 
     elements.extend(keywords::parse_keywords(&mut tokens, options));
     merge_regional_languages(&mut tokens, &mut elements);
+    elements.extend(broadcast::parse_broadcast(&mut tokens));
 
     if options.parse_file_checksum {
         elements.extend(file_checksum::parse_file_checksum(&mut tokens));

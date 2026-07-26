@@ -106,63 +106,52 @@ fn options_from_bits(bits: u32) -> Options {
 // enum can never silently shift the ABI. A test below asserts the mapping is
 // total. Bindings should mirror these exact numbers.
 
-/// Maps an [`ElementKind`] to its stable ABI discriminant.
-fn kind_to_u32(kind: ElementKind) -> u32 {
-    match kind {
-        ElementKind::AudioTerm => 0,
-        ElementKind::Device => 1,
-        ElementKind::Episode => 2,
-        ElementKind::EpisodeTitle => 3,
-        ElementKind::FileChecksum => 4,
-        ElementKind::FileExtension => 5,
-        ElementKind::Language => 6,
-        ElementKind::Other => 7,
-        ElementKind::Part => 8,
-        ElementKind::ReleaseGroup => 9,
-        ElementKind::ReleaseInformation => 10,
-        ElementKind::ReleaseVersion => 11,
-        ElementKind::Season => 12,
-        ElementKind::Source => 13,
-        ElementKind::Subtitles => 14,
-        ElementKind::Title => 15,
-        ElementKind::Type => 16,
-        ElementKind::VideoResolution => 17,
-        ElementKind::VideoTerm => 18,
-        ElementKind::Volume => 19,
-        ElementKind::Year => 20,
-    }
+/// One list for both directions, so they can't drift apart.
+macro_rules! abi_kinds {
+    ($($variant:ident => $value:literal, $name:literal),+ $(,)?) => {
+        /// Maps an [`ElementKind`] to its stable ABI discriminant.
+        fn kind_to_u32(kind: ElementKind) -> u32 {
+            match kind {
+                $(ElementKind::$variant => $value),+
+            }
+        }
+
+        /// The snake_case name of an `ElementKind` discriminant (as returned by
+        /// [`anitomy_result_kind`]), or an empty string for an unknown value. The
+        /// returned pointer is a `'static` C string and must not be freed.
+        #[no_mangle]
+        pub extern "C" fn anitomy_kind_name(kind: u32) -> *const c_char {
+            let name: &CStr = match kind {
+                $($value => $name,)+
+                _ => c"",
+            };
+            name.as_ptr()
+        }
+    };
 }
 
-/// The snake_case name of an `ElementKind` discriminant (as returned by
-/// [`anitomy_result_kind`]), or an empty string for an unknown value. The
-/// returned pointer is a `'static` C string and must not be freed.
-#[no_mangle]
-pub extern "C" fn anitomy_kind_name(kind: u32) -> *const c_char {
-    let name: &CStr = match kind {
-        0 => c"audio_term",
-        1 => c"device",
-        2 => c"episode",
-        3 => c"episode_title",
-        4 => c"file_checksum",
-        5 => c"file_extension",
-        6 => c"language",
-        7 => c"other",
-        8 => c"part",
-        9 => c"release_group",
-        10 => c"release_information",
-        11 => c"release_version",
-        12 => c"season",
-        13 => c"source",
-        14 => c"subtitles",
-        15 => c"title",
-        16 => c"type",
-        17 => c"video_resolution",
-        18 => c"video_term",
-        19 => c"volume",
-        20 => c"year",
-        _ => c"",
-    };
-    name.as_ptr()
+abi_kinds! {
+    AudioTerm => 0, c"audio_term",
+    Device => 1, c"device",
+    Episode => 2, c"episode",
+    EpisodeTitle => 3, c"episode_title",
+    FileChecksum => 4, c"file_checksum",
+    FileExtension => 5, c"file_extension",
+    Language => 6, c"language",
+    Other => 7, c"other",
+    Part => 8, c"part",
+    ReleaseGroup => 9, c"release_group",
+    ReleaseInformation => 10, c"release_information",
+    ReleaseVersion => 11, c"release_version",
+    Season => 12, c"season",
+    Source => 13, c"source",
+    Subtitles => 14, c"subtitles",
+    Title => 15, c"title",
+    Type => 16, c"type",
+    VideoResolution => 17, c"video_resolution",
+    VideoTerm => 18, c"video_term",
+    Volume => 19, c"volume",
+    Year => 20, c"year",
 }
 
 // --- Result handle ---------------------------------------------------------
@@ -518,20 +507,33 @@ mod tests {
         }
     }
 
-    /// Every `ElementKind` maps to a discriminant whose `anitomy_kind_name`
-    /// round-trips — guards against the enum and the ABI table drifting apart.
     #[test]
-    fn kind_mapping_is_total() {
-        // If a variant is added to ElementKind without updating kind_to_u32,
-        // its parse output would surface here (or the name would be empty).
-        for n in 0..21u32 {
-            let name = unsafe { CStr::from_ptr(anitomy_kind_name(n)) }
+    fn options_default_matches_core() {
+        assert_eq!(
+            options_from_bits(anitomy_options_default()),
+            Options::default()
+        );
+    }
+
+    #[test]
+    fn kind_mapping_round_trips() {
+        for &kind in ElementKind::ALL {
+            let name = unsafe { CStr::from_ptr(anitomy_kind_name(kind_to_u32(kind))) }
                 .to_str()
                 .unwrap();
-            assert!(!name.is_empty(), "discriminant {n} has no name");
+            assert_eq!(name, kind.as_str(), "{kind:?} has the wrong ABI name");
         }
-        // One past the end is empty.
-        assert!(unsafe { CStr::from_ptr(anitomy_kind_name(21)) }
+    }
+
+    #[test]
+    fn kind_discriminants_are_dense() {
+        let mut seen: Vec<u32> = ElementKind::ALL.iter().map(|&k| kind_to_u32(k)).collect();
+        seen.sort_unstable();
+        let expected: Vec<u32> = (0..ElementKind::ALL.len() as u32).collect();
+        assert_eq!(seen, expected);
+
+        let past_end = ElementKind::ALL.len() as u32;
+        assert!(unsafe { CStr::from_ptr(anitomy_kind_name(past_end)) }
             .to_str()
             .unwrap()
             .is_empty());

@@ -309,9 +309,7 @@ fn parse_separated_episodes(tokens: &mut [Token], elements: &mut Vec<Element>) -
         // Stop at the first non-delimiter; scanning further is quadratic.
         let Some(sep_idx) = tokens.get(idx + 1..).and_then(|s| {
             s.iter()
-                .position(|t| {
-                    matches!(t.value, "&" | "~" | "of") || is_not_delimiter_token(t)
-                })
+                .position(|t| matches!(t.value, "&" | "~" | "of") || is_not_delimiter_token(t))
                 .map(|i| idx + 1 + i)
         }) else {
             continue;
