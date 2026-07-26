@@ -554,5 +554,44 @@
       "video_resolution": "1080p",
       "file_extension": "mkv"
     }
+  },
+  {
+    "input": "【喵萌奶茶屋】★07月新番★[葬送的芙莉蓮][01][1080p].mp4",
+    "source": "anitomy-ng",
+    "note": "Chinese fansub seasonal-broadcast marker. The ★NN月新番★ prefix sits where the title normally would, so it was claimed as the title and the real name (the following bracket) was dropped. Claimed as `other` by detail/parser/broadcast.rs.",
+    "output": {
+      "release_group": "喵萌奶茶屋",
+      "other": "★07月新番★",
+      "title": "葬送的芙莉蓮",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mp4"
+    }
+  },
+  {
+    "input": "[诸神字幕组][十月新番][药屋少女的呢喃][01][1080p].mp4",
+    "source": "anitomy-ng",
+    "note": "Same marker, bracketed rather than ★-decorated, and with a Chinese numeral month (十月) instead of digits.",
+    "output": {
+      "release_group": "诸神字幕组",
+      "other": "十月新番",
+      "title": "药屋少女的呢喃",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mp4"
+    }
+  },
+  {
+    "input": "【幻樱字幕组】★4月新番★[香格里拉·弗陇提亚][01][1080p].mp4",
+    "source": "anitomy-ng",
+    "note": "Single-digit month, and a title containing a middle dot -- checks the marker match doesn't extend past 新番.",
+    "output": {
+      "release_group": "幻樱字幕组",
+      "other": "★4月新番★",
+      "title": "香格里拉·弗陇提亚",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mp4"
+    }
   }
 ]

@@ -103,8 +103,8 @@ fn options_from_bits(bits: u32) -> Options {
 // --- ElementKind discriminants ---------------------------------------------
 //
 // Stable integer values for `ElementKind`, pinned here so reordering the Rust
-// enum can never silently shift the ABI. A test below asserts the mapping is
-// total. Bindings should mirror these exact numbers.
+// enum can never silently shift the ABI. Tests below assert the mapping
+// round-trips. Bindings should mirror these exact numbers.
 
 /// One list for both directions, so they can't drift apart.
 macro_rules! abi_kinds {
