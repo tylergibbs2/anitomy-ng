@@ -306,17 +306,19 @@ fn parse_separated_episodes(tokens: &mut [Token], elements: &mut Vec<Element>) -
         .collect();
 
     for idx in candidates {
-        let search_start = idx + 1;
-        let Some(sep_idx) = tokens.get(search_start..).and_then(|s| {
+        // Stop at the first non-delimiter; scanning further is quadratic.
+        let Some(sep_idx) = tokens.get(idx + 1..).and_then(|s| {
             s.iter()
-                .position(|t| matches!(t.value, "&" | "~" | "of"))
-                .map(|i| search_start + i)
+                .position(|t| {
+                    matches!(t.value, "&" | "~" | "of") || is_not_delimiter_token(t)
+                })
+                .map(|i| idx + 1 + i)
         }) else {
             continue;
         };
-        if tokens
-            .get(search_start..sep_idx)
-            .is_some_and(|s| s.iter().any(is_not_delimiter_token))
+        if !tokens
+            .get(sep_idx)
+            .is_some_and(|t| matches!(t.value, "&" | "~" | "of"))
         {
             continue;
         }

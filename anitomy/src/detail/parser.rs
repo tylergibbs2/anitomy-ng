@@ -240,7 +240,9 @@ fn dedupe_zero_padded(elements: &mut Vec<Element>, kind: ElementKind) {
 
     // canonical value -> index of the current best representative.
     let mut best: HashMap<u64, usize> = HashMap::new();
-    let mut drop: Vec<usize> = Vec::new();
+    // Indexed, not a list of indices: `retain` scanning a list is quadratic.
+    let mut drop = vec![false; elements.len()];
+    let mut any_dropped = false;
     for (i, e) in elements.iter().enumerate() {
         if e.kind != kind {
             continue;
@@ -256,21 +258,25 @@ fn dedupe_zero_padded(elements: &mut Vec<Element>, kind: ElementKind) {
                 let keep_new = elements.get(prev).is_some_and(|prev_e| {
                     (e.value.len(), e.position) < (prev_e.value.len(), prev_e.position)
                 });
-                if keep_new {
-                    drop.push(prev);
+                let dropped = if keep_new {
                     best.insert(n, i);
+                    prev
                 } else {
-                    drop.push(i);
+                    i
+                };
+                if let Some(slot) = drop.get_mut(dropped) {
+                    *slot = true;
+                    any_dropped = true;
                 }
             }
         }
     }
-    if drop.is_empty() {
+    if !any_dropped {
         return;
     }
     let mut i = 0;
     elements.retain(|_| {
-        let keep = !drop.contains(&i);
+        let keep = !drop.get(i).copied().unwrap_or(false);
         i += 1;
         keep
     });
