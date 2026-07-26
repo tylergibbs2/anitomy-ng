@@ -1,0 +1,42 @@
+name: Fuzz
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds per target
+        default: "300"
+  schedule:
+    - cron: "0 5 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [parse, parse_together]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+      # Carry the corpus between runs so coverage accumulates instead of
+      # restarting from the fixture seeds every week.
+      - uses: actions/cache@v4
+        with:
+          path: anitomy/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: fuzz-${{ matrix.target }}-
+      - run: scripts/fuzz.sh ${{ matrix.target }} ${{ inputs.seconds || 300 }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: anitomy/fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore

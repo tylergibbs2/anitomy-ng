@@ -1,0 +1,30 @@
+# Its own workspace: needs nightly (libfuzzer), so it stays out of the root one.
+[workspace]
+
+[package]
+name = "anitomy-ng-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+anitomy-ng = { path = ".." }
+
+[[bin]]
+name = "parse"
+path = "fuzz_targets/parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_together"
+path = "fuzz_targets/parse_together.rs"
+test = false
+doc = false
+bench = false
