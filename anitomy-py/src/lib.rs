@@ -110,7 +110,12 @@ fn raw(e: anitomy_ng::Element) -> RawElement {
 fn parse(py: Python<'_>, filename: &str, options: Option<Options>) -> Vec<RawElement> {
     let opts: anitomy_ng::Options = options.unwrap_or_default().into();
     // Nothing in here touches Python, so let other threads run.
-    py.detach(|| anitomy_ng::parse(filename, opts).into_iter().map(raw).collect())
+    py.detach(|| {
+        anitomy_ng::parse(filename, opts)
+            .into_iter()
+            .map(raw)
+            .collect()
+    })
 }
 
 #[pyfunction]

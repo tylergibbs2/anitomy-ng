@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+# c"..." literals.
+rust-version = "1.77"
 readme = "README.md"
 keywords = ["anime", "parser", "filename", "anitomy", "ffi"]
 categories = ["external-ffi-bindings", "parser-implementations"]

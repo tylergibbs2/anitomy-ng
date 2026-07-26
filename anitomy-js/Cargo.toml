@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+# wasm-bindgen.
+rust-version = "1.77"
 # Published to npm (via wasm-pack), not to crates.io.
 publish = false
 

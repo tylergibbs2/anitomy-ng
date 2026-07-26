@@ -23,6 +23,15 @@ jobs:
       # test time. Covered by python-test below.
       - run: cargo test --workspace --exclude anitomy-ng-py --features anitomy-ng/cli
 
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.70.0
+      # Library only: the `cli` feature pulls clap, which needs a much newer
+      # rustc, and the lockfile is v4 so it can't be used by this cargo.
+      - run: rm -f Cargo.lock && cargo check -p anitomy-ng
+
   python-test:
     strategy:
       matrix:

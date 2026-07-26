@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+# pyo3.
+rust-version = "1.83"
 publish = false
 
 [lib]
