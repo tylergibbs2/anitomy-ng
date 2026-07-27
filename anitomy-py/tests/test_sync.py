@@ -45,7 +45,7 @@ def test_options_stub_matches_native():
         for cls in tree.body
         if isinstance(cls, ast.ClassDef) and cls.name == "Options"
         for node in cls.body
-        if isinstance(node, ast.AnnAssign)
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
     }
     assert declared == set(_anitomy.option_fields())
 

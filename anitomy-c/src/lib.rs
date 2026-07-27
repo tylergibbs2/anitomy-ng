@@ -116,16 +116,11 @@ macro_rules! abi_kinds {
             }
         }
 
-        /// The snake_case name of an `ElementKind` discriminant (as returned by
-        /// [`anitomy_result_kind`]), or an empty string for an unknown value. The
-        /// returned pointer is a `'static` C string and must not be freed.
-        #[no_mangle]
-        pub extern "C" fn anitomy_kind_name(kind: u32) -> *const c_char {
-            let name: &CStr = match kind {
+        fn kind_name_cstr(kind: u32) -> &'static CStr {
+            match kind {
                 $($value => $name,)+
                 _ => c"",
-            };
-            name.as_ptr()
+            }
         }
     };
 }
@@ -152,6 +147,18 @@ abi_kinds! {
     VideoTerm => 18, c"video_term",
     Volume => 19, c"volume",
     Year => 20, c"year",
+}
+
+/// The snake_case name of an `ElementKind` discriminant (as returned by
+/// [`anitomy_result_kind`]), or an empty string for an unknown value. The
+/// returned pointer is a `'static` C string and must not be freed.
+///
+/// Declared outside `abi_kinds!` on purpose: cbindgen parses source without
+/// expanding macros, so a `#[no_mangle]` fn generated inside one is missing
+/// from `include/anitomy.h` entirely.
+#[no_mangle]
+pub extern "C" fn anitomy_kind_name(kind: u32) -> *const c_char {
+    kind_name_cstr(kind).as_ptr()
 }
 
 // --- Result handle ---------------------------------------------------------
@@ -504,6 +511,36 @@ mod tests {
                 assert_ne!(name, "title");
             }
             anitomy_result_free(result);
+        }
+    }
+
+    /// cbindgen parses source without expanding macros, so an exported fn
+    /// declared inside one silently vanishes from the header. Nothing else
+    /// catches that: C# uses P/Invoke, and no CI job compiles the header.
+    #[test]
+    fn every_exported_fn_is_in_the_header() {
+        let src = include_str!("lib.rs");
+        let header = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("include")
+                .join("anitomy.h"),
+        )
+        .expect("build.rs generates include/anitomy.h");
+
+        let exported: Vec<&str> = src
+            .lines()
+            .zip(src.lines().skip(1))
+            .filter(|(line, _)| line.trim() == "#[no_mangle]")
+            .filter_map(|(_, next)| next.split("fn ").nth(1))
+            .filter_map(|rest| rest.split('(').next())
+            .collect();
+
+        assert!(exported.len() >= 13, "found only {exported:?}");
+        for name in exported {
+            assert!(
+                header.contains(&format!("{name}(")),
+                "{name} is exported but missing from include/anitomy.h",
+            );
         }
     }
 
