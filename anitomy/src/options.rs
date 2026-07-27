@@ -10,8 +10,16 @@
 macro_rules! options {
     ($($field:ident),+ $(,)?) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "serde", serde(default))]
         pub struct Options {
             $(pub $field: bool),+
+        }
+
+        impl Options {
+            /// Field names, in declaration order — lets the bindings check
+            /// their mirrored copies of this list against it.
+            pub const FIELDS: &'static [&'static str] = &[$(stringify!($field)),+];
         }
 
         impl Default for Options {

@@ -128,7 +128,14 @@ public static class Anitomy
         var elements = new List<Element>((int)len);
         for (nuint i = 0; i < len; i++)
         {
-            var kind = (ElementKind)NativeMethods.anitomy_result_kind(result, i);
+            uint rawKind = NativeMethods.anitomy_result_kind(result, i);
+            if (rawKind > MaxKind)
+            {
+                throw new InvalidOperationException(
+                    $"native library returned unknown element kind {rawKind}; " +
+                    "AnitomyNg is out of sync with the native anitomy-c it was built against");
+            }
+            var kind = (ElementKind)rawKind;
             nint valuePtr = NativeMethods.anitomy_result_value(result, i);
             string value = Marshal.PtrToStringUTF8(valuePtr) ?? string.Empty;
             int position = (int)NativeMethods.anitomy_result_position(result, i);
@@ -136,6 +143,16 @@ public static class Anitomy
         }
         return elements;
     }
+
+    private static readonly uint MaxKind =
+        Enum.GetValues<ElementKind>().Max(k => (uint)k);
+
+    /// <summary>
+    /// The snake_case ABI name of a kind, e.g. <c>"release_group"</c>, as
+    /// reported by the native library. Empty for an unknown discriminant.
+    /// </summary>
+    public static string KindName(ElementKind kind) =>
+        Marshal.PtrToStringUTF8(NativeMethods.anitomy_kind_name((uint)kind)) ?? string.Empty;
 
     /// <summary>The version of the underlying native anitomy-ng library.</summary>
     public static string NativeVersion =>

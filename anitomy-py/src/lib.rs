@@ -135,11 +135,29 @@ fn parse_together(
     })
 }
 
+/// The native `ElementKind` names, so the hand-written enum in `__init__.py`
+/// can be checked against them instead of drifting silently.
+#[pyfunction]
+fn kind_names() -> Vec<&'static str> {
+    anitomy_ng::ElementKind::ALL
+        .iter()
+        .map(|k| k.as_str())
+        .collect()
+}
+
+/// The native `Options` field names, for the same reason.
+#[pyfunction]
+fn option_fields() -> Vec<&'static str> {
+    anitomy_ng::Options::FIELDS.to_vec()
+}
+
 #[pymodule]
 fn _anitomy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Options>()?;
     m.add_class::<RawElement>()?;
     m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(parse_together, m)?)?;
+    m.add_function(wrap_pyfunction!(kind_names, m)?)?;
+    m.add_function(wrap_pyfunction!(option_fields, m)?)?;
     Ok(())
 }

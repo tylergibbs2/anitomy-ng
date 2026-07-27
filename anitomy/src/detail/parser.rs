@@ -67,7 +67,7 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
 
     if options.parse_episode {
         elements.extend(volume::parse_volume(&mut tokens));
-        elements.extend(episode::parse_episode(&mut tokens));
+        elements.extend(episode::parse_episode(&mut tokens, options));
     }
 
     if options.parse_title {

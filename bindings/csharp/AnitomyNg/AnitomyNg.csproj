@@ -33,4 +33,8 @@
     <None Include="runtimes/**" Pack="true" PackagePath="runtimes" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="AnitomyNg.Tests" />
+  </ItemGroup>
+
 </Project>

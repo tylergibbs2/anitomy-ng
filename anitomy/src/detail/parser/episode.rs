@@ -22,6 +22,7 @@ use crate::detail::token::{
 };
 use crate::detail::util::{byte_to_char_offset, equal_ignore_ascii_case, to_int};
 use crate::element::{Element, ElementKind};
+use crate::options::Options;
 
 fn add_element_from_token(tokens: &mut [Token], idx: usize, elements: &mut Vec<Element>) {
     mark(tokens, idx, ElementKind::Episode);
@@ -145,23 +146,20 @@ fn apply_episode_match(
     idx: usize,
     m: &EpisodeTokenMatch,
     elements: &mut Vec<Element>,
+    options: &Options,
 ) {
     let Some(base_position) = tokens.get(idx).map(|t| t.position) else {
         return;
     };
 
-    if let Some((season, offset)) = &m.season_s {
-        elements.push(Element {
-            kind: ElementKind::Season,
-            value: season.clone(),
-            position: base_position + offset,
-        });
-    } else if let Some((season, offset)) = &m.season_x {
-        elements.push(Element {
-            kind: ElementKind::Season,
-            value: season.clone(),
-            position: base_position + offset,
-        });
+    if options.parse_season {
+        if let Some((season, offset)) = m.season_s.as_ref().or(m.season_x.as_ref()) {
+            elements.push(Element {
+                kind: ElementKind::Season,
+                value: season.clone(),
+                position: base_position + offset,
+            });
+        }
     }
 
     let (ep_value, ep_offset) = &m.episode;
@@ -182,7 +180,11 @@ fn apply_episode_match(
     }
 }
 
-fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element>) {
+fn parse_episode_token_strategy(
+    tokens: &mut [Token],
+    elements: &mut Vec<Element>,
+    options: &Options,
+) {
     // Candidate indices are collected once, but upstream iterates a *lazy*
     // filtered view, so a token consumed as the second half of a range by
     // an earlier iteration (via `apply_episode_match`) is invisible to
@@ -279,7 +281,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             }
         }
 
-        apply_episode_match(tokens, idx, &m1, elements);
+        apply_episode_match(tokens, idx, &m1, elements, options);
         if let Some((dot_idx, five_idx)) = fraction {
             let kind = if fraction_on_version {
                 ElementKind::ReleaseVersion
@@ -290,7 +292,7 @@ fn parse_episode_token_strategy(tokens: &mut [Token], elements: &mut Vec<Element
             mark(tokens, five_idx, kind);
         }
         if let Some((after_idx, m2)) = range_next {
-            apply_episode_match(tokens, after_idx, &m2, elements);
+            apply_episode_match(tokens, after_idx, &m2, elements, options);
         }
     }
 }
@@ -666,10 +668,10 @@ fn parse_last_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool 
     false
 }
 
-pub(super) fn parse_episode(tokens: &mut [Token]) -> Vec<Element> {
+pub(super) fn parse_episode(tokens: &mut [Token], options: &Options) -> Vec<Element> {
     let mut elements = Vec::new();
 
-    parse_episode_token_strategy(tokens, &mut elements);
+    parse_episode_token_strategy(tokens, &mut elements, options);
     if !elements.is_empty() {
         return elements;
     }

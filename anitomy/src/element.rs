@@ -90,9 +90,68 @@ impl fmt::Display for ParseElementKindError {
 impl std::error::Error for ParseElementKindError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Element {
     pub kind: ElementKind,
     pub value: String,
     /// Index (in UTF-32 codepoints, matching upstream) in the input string.
     pub position: usize,
+}
+
+/// Serialized as the same snake_case name `as_str`/`FromStr` use, so the wire
+/// format can't drift from the fixture suites' keys.
+#[cfg(feature = "serde")]
+impl serde::Serialize for ElementKind {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.as_str())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for ElementKind {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let s = <&str as serde::Deserialize>::deserialize(d)?;
+        s.parse()
+            .map_err(|_| serde::de::Error::unknown_variant(s, &[]))
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+#[allow(clippy::unwrap_used)]
+mod serde_tests {
+    use crate::{Element, ElementKind, Options};
+
+    #[test]
+    fn element_kind_wire_name_matches_as_str() {
+        for &kind in ElementKind::ALL {
+            let json = serde_json::to_string(&kind).unwrap();
+            assert_eq!(json, format!("\"{}\"", kind.as_str()));
+            assert_eq!(serde_json::from_str::<ElementKind>(&json).unwrap(), kind);
+        }
+    }
+
+    #[test]
+    fn element_kind_rejects_unknown() {
+        assert!(serde_json::from_str::<ElementKind>("\"nope\"").is_err());
+    }
+
+    #[test]
+    fn element_and_options_round_trip() {
+        let elements = crate::parse("[Grp] Show - 05 [1080p].mkv", Options::default());
+        let json = serde_json::to_string(&elements).unwrap();
+        assert_eq!(
+            serde_json::from_str::<Vec<Element>>(&json).unwrap(),
+            elements
+        );
+
+        let opts = Options {
+            parse_title: false,
+            ..Default::default()
+        };
+        let back: Options = serde_json::from_str(&serde_json::to_string(&opts).unwrap()).unwrap();
+        assert_eq!(back, opts);
+        // serde(default) means a partial object fills the rest from Default.
+        let partial: Options = serde_json::from_str(r#"{"parse_title":false}"#).unwrap();
+        assert_eq!(partial, opts);
+    }
 }

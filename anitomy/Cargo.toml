@@ -25,6 +25,7 @@ regex = { version = "1", default-features = false, features = ["std"] }
 # nothing extra — these are pulled in only by the `cli` feature below.
 clap = { version = "4", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -32,7 +33,10 @@ serde_json = "1"
 
 [features]
 # Builds the `anitomy` command-line binary (`cargo install anitomy-ng --features cli`).
-cli = ["dep:clap", "dep:serde_json"]
+cli = ["dep:clap", "dep:serde_json", "serde"]
+
+# Serialize/Deserialize for Element, ElementKind (as its snake_case name), Options.
+serde = ["dep:serde"]
 
 # The `anitomy` CLI lives in this crate (src/main.rs) rather than a separate
 # crate, but only compiles when the `cli` feature is on, so it never affects
