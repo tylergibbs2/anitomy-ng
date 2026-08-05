@@ -41,4 +41,7 @@ print(f"seeded {written} new / {len(inputs)} fixture inputs -> {corpus}")
 PY
 
 cd "$ROOT/anitomy"
-exec cargo +nightly fuzz run "$TARGET" -- -max_total_time="$SECS"
+# cargo-fuzz defaults --target to the triple it was compiled for, not the host;
+# for the musl-linked prebuilt that means +crt-static, which ASan rejects.
+HOST="$(rustc +nightly -vV | sed -n 's/^host: //p')"
+exec cargo +nightly fuzz run "$TARGET" --target "$HOST" -- -max_total_time="$SECS"

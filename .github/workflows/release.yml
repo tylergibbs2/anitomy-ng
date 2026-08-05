@@ -31,6 +31,11 @@ on:
 
 permissions: {}
 
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  WASM_PACK_VERSION: v0.15.0
+
 jobs:
   # Reuses wheels.yml; its artifacts are available to the publish job below.
   build:
@@ -61,16 +66,16 @@ jobs:
       # twine rejected `anitomy-<ver>-<target>.tar.gz` as a malformed sdist
       # ("too many top-level members"). Wheels and the sdist have distinct
       # artifact-name prefixes, so they need two filtered downloads.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
           pattern: wheels-*
           merge-multiple: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
           name: sdist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist
           # PEP 740 signed provenance for each artifact (default, kept explicit).
@@ -87,9 +92,9 @@ jobs:
     permissions:
       id-token: write # exchanged for a short-lived, run-scoped crates.io token
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: rust-lang/crates-io-auth-action@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
         id: auth
       - run: cargo publish -p anitomy-ng
         env:
@@ -103,12 +108,13 @@ jobs:
       id-token: write # npm provenance (Sigstore attestation via OIDC)
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - uses: jetli/wasm-pack-action@v0.4.0
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown --no-self-update && rustup default stable
+      - name: Install wasm-pack
+        run: |
+          curl -sSfL "https://github.com/rustwasm/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            | tar -xz -C "$HOME/.cargo/bin" --strip-components=1 --wildcards '*/wasm-pack'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
@@ -133,8 +139,8 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
       tag: v${{ steps.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
       - id: meta
         run: |
           version=$(cargo metadata --format-version 1 --no-deps \
@@ -161,14 +167,13 @@ jobs:
       VERSION: ${{ needs.binaries-prepare.outputs.version }}
       TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - shell: bash
+        run: rustup toolchain install stable --profile minimal --target "$TARGET" --no-self-update && rustup default stable
       # Cross linker/runner for the Linux targets that aren't the runner's own
       # arch/libc (aarch64, musl); a no-op for the native macOS/Windows builds.
       - if: ${{ matrix.cross }}
-        uses: taiki-e/setup-cross-toolchain-action@v1
+        uses: taiki-e/setup-cross-toolchain-action@12b7ad4acfa95a1476779d6c06699b96ec1691f8 # v1.42.0
         with:
           target: ${{ matrix.target }}
       - name: Build
@@ -193,7 +198,7 @@ jobs:
           else
             tar -C "$stage" -czf "${stage}.tar.gz" .
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cli-${{ matrix.target }}
           path: |
@@ -214,7 +219,7 @@ jobs:
       TAG: ${{ needs.binaries-prepare.outputs.tag }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
           pattern: cli-*
@@ -223,7 +228,7 @@ jobs:
         working-directory: dist
         run: sha256sum anitomy-* > SHA256SUMS
       # Signed SLSA provenance for each archive (matches the PyPI/npm attestations).
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: |
             dist/anitomy-*.tar.gz
@@ -256,17 +261,17 @@ jobs:
     permissions:
       id-token: write # mint the OIDC token NuGet Trusted Publishing exchanges
     steps:
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "8.0.x"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nuget
           path: dist-nuget
       # Tokenless: exchanges the GitHub OIDC token for a short-lived NuGet API
       # key via the trusted-publishing policy configured on nuget.org. `user`
       # is the nuget.org account that owns the policy (set the repo variable).
-      - uses: NuGet/login@v1
+      - uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         id: login
         with:
           user: ${{ vars.NUGET_USER }}

@@ -8,20 +8,26 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  WASM_PACK_VERSION: v0.15.0
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - uses: jetli/wasm-pack-action@v0.4.0
-      - uses: astral-sh/setup-uv@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown --no-self-update && rustup default stable
+      - name: Install wasm-pack
+        run: |
+          curl -sSfL "https://github.com/rustwasm/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            | tar -xz -C "$HOME/.cargo/bin" --strip-components=1 --wildcards '*/wasm-pack'
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
       - run: touch refs.md
@@ -41,7 +47,7 @@ jobs:
           rev=$(grep -A2 'name = "anitomy"' scripts/adapters/rapptz/Cargo.lock | grep -o '#[0-9a-f]\{40\}' | tr -d '#' | cut -c1-9)
           echo "- rapptz: Rapptz/anitomy-rs@${rev:-master}" >> refs.md
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: erengy/anitomy
           ref: develop
@@ -59,7 +65,7 @@ jobs:
           JSON
           echo "- anitomy_develop: erengy/anitomy@$(git -C _ref/anitomy-develop rev-parse --short HEAD)" >> refs.md
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: erengy/anitomy
           ref: master
@@ -130,7 +136,7 @@ jobs:
           echo -e "\n## Reference versions\n" >> "$GITHUB_STEP_SUMMARY"
           cat refs.md >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: conformance-benchmark
