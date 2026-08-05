@@ -987,6 +987,17 @@
     "mal_id": 0
   },
   {
+    "input": "Sasameki Koto E02: Cute People.mkv",
+    "source": "anitomy-develop",
+    "output": {
+      "title": "Sasameki Koto",
+      "episode": "02",
+      "episode_title": "Cute People",
+      "file_extension": "mkv"
+    },
+    "mal_id": 6203
+  },
+  {
     "input": "School Rumble Complete S01-S02 + OVA [576p] [x264] [Dual-Audio] [Eng-Subs]",
     "source": "anitomy-develop",
     "output": {

@@ -14,7 +14,7 @@
   {
     "input": "Sasameki Koto E02: Cute People.mkv",
     "source": "anitomy-ng",
-    "note": "github.com/erengy/anitomy issue #37 -- colon between an episode marker and the episode title wasn't a recognized delimiter, so the whole filename fell back to being the title. Fixed by adding ':' to detail/delimiter.rs's is_delimiter (verified against upstream's develop/master headers: neither treats it as a delimiter either, so this is a beyond-upstream fix, not a missed port detail).",
+    "note": "github.com/erengy/anitomy issue #37 -- colon between an episode marker and the episode title wasn't a recognized delimiter, so the whole filename fell back to being the title. Fixed by adding ':' to detail/delimiter.rs's is_delimiter. This was ahead of upstream when written; upstream converged on the same fix in develop 44efa8f0e (2026-06-09), adding ':' to its own is_delimiter and this exact case to test/data.json -- so it now also appears in the anitomy_develop suite. Kept here as the original record of the divergence.",
     "output": {
       "title": "Sasameki Koto",
       "episode": "02",
