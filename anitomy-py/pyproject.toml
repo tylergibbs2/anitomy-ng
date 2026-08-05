@@ -22,7 +22,7 @@ Repository = "https://github.com/tylergibbs2/anitomy-ng"
 Issues = "https://github.com/tylergibbs2/anitomy-ng/issues"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest>=9.0.3; python_version >= '3.10'"]
 lint = ["ruff>=0.11", "pyright>=1.1.400"]
 
 [tool.ruff]
