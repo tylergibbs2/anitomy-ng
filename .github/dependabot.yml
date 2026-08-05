@@ -16,3 +16,11 @@ updates:
     groups:
       cargo:
         patterns: ["*"]
+
+  - package-ecosystem: uv
+    directory: /anitomy-py
+    schedule:
+      interval: weekly
+    groups:
+      uv:
+        patterns: ["*"]
