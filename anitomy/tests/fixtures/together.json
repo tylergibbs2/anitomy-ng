@@ -77,6 +77,30 @@
     "note": "Upper guard on continues_a_title: a real path with no group tag, so the tail has the same evidence Fate/Zero has. It still splits because the greedy title spans both folders."
   },
   {
+    "name": "nested-path-folder-unlike-title",
+    "inputs": [
+      "Anime/Anime/Show - 05 [720p].mkv",
+      "Anime/Anime/Show - 06 [720p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "nested-path-no-group-tag has the folder equal to the file's title, so continues_a_title short-circuits on the folder-echo branch before the join is ever tested. Here the repeated folder differs from the title, which is the only shape that reaches the join on a nested path -- it must still split. Found by diffing a generated path corpus against the fixtures, not by the fixtures themselves.",
+    "skip": null
+  },
+  {
     "name": "generic-parent-folder-with-group",
     "inputs": [
       "Random Folder Name/[SubsPlease] Frieren - 05 (1080p).mkv",

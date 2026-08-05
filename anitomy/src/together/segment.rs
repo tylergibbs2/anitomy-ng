@@ -73,22 +73,20 @@ fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
         return None;
     }
 
-    let whole: String = chars.iter().collect();
-    let whole_elements = crate::parse(&whole, options);
-
     for i in (0..chars.len()).rev() {
         if !chars.get(i).is_some_and(|&c| is_path_separator(c)) {
             continue;
         }
         let prefix = chars.get(..i).unwrap_or_default();
         let tail = chars.get(i.saturating_add(1)..).unwrap_or_default();
-        // Shared: both tests below ask about this same segment.
         let tail_input: String = tail.iter().collect();
         let tail_elements = crate::parse(&tail_input, options);
-        if continues_a_title(&whole_elements, &tail_elements, chars, i, prefix, options) {
-            continue;
-        }
-        if looks_like_filename(&tail_elements, prefix, options) {
+
+        // The veto is only consulted for a separator that would otherwise be
+        // taken, so most paths never pay for it.
+        if looks_like_filename(&tail_elements, prefix, options)
+            && !continues_a_title(&tail_elements, chars, i, prefix, options)
+        {
             return Some(i.saturating_add(1));
         }
     }
@@ -108,13 +106,36 @@ fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
 /// working. Equal titles either side are the folder-echo case, a real
 /// directory, so they never veto.
 fn continues_a_title(
-    whole_elements: &[Element],
     tail_elements: &[Element],
     chars: &[char],
     sep: usize,
     prefix: &[char],
     options: Options,
 ) -> bool {
+    let Some(tail_title) = tail_elements.iter().find(|e| e.kind == ElementKind::Title) else {
+        return false;
+    };
+    // For the veto to fire the title must run straight on from the separator,
+    // so anything ahead of it in the tail (a group tag, most commonly) rules it
+    // out — checked before parsing anything, since this is the common case.
+    if tail_title.position != 0 {
+        return false;
+    }
+    let Some(separator) = chars.get(sep) else {
+        return false;
+    };
+
+    let component_start = prefix
+        .iter()
+        .rposition(|&c| is_path_separator(c))
+        .map_or(0, |i| i.saturating_add(1));
+    let component: &[char] = prefix.get(component_start..).unwrap_or_default();
+
+    // Judged on the whole path, not just the two components either side: an
+    // outer directory belongs in the greedy title too, and dropping it makes
+    // the join match on nested paths it shouldn't (`Anime/Anime/Show - 05`).
+    let whole: String = chars.iter().collect();
+    let whole_elements = crate::parse(&whole, options);
     if !whole_elements
         .iter()
         .any(|e| e.kind == ElementKind::Episode)
@@ -124,35 +145,23 @@ fn continues_a_title(
     let Some(whole_title) = whole_elements.iter().find(|e| e.kind == ElementKind::Title) else {
         return false;
     };
-    let Some(tail_title) = tail_elements.iter().find(|e| e.kind == ElementKind::Title) else {
-        return false;
-    };
-    let Some(separator) = chars.get(sep) else {
-        return false;
-    };
 
-    let component_start = prefix
-        .iter()
-        .rposition(|&c| is_path_separator(c))
-        .map_or(0, |i| i.saturating_add(1));
-    let component: String = prefix
-        .get(component_start..)
-        .unwrap_or_default()
-        .iter()
-        .collect();
-    let Some(component_title) = crate::parse(&component, options)
-        .into_iter()
-        .find(|e| e.kind == ElementKind::Title)
+    let Some(expected) = whole_title
+        .value
+        .strip_suffix(&format!("{separator}{}", tail_title.value))
     else {
         return false;
     };
 
     // A folder restating the file's title is a real directory.
-    if component_title.value == tail_title.value {
+    if expected == tail_title.value {
         return false;
     }
 
-    whole_title.value == format!("{}{separator}{}", component_title.value, tail_title.value)
+    let component_input: String = component.iter().collect();
+    crate::parse(&component_input, options)
+        .iter()
+        .any(|e| e.kind == ElementKind::Title && e.value == expected)
 }
 
 /// Does the component after a separator parse as a real filename, rather than as
