@@ -35,8 +35,45 @@ public static class Anitomy
             return Array.Empty<Element>();
         }
 
-        // try/finally guarantees the native handle is freed even if reading a
-        // value throws — the pointer never escapes this method.
+        try
+        {
+            return ReadElements(result);
+        }
+        finally
+        {
+            NativeMethods.anitomy_result_free(result);
+        }
+    }
+
+    /// <summary>
+    /// Parses a single filename that may carry a directory prefix, so the
+    /// result describes the file rather than the folder.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Parse"/> leaves a path's separators and duplicated folder
+    /// text in the title; this strips a real directory prefix and recovers a
+    /// title that lives only in the parent folder. Without a prefix it behaves
+    /// exactly like <see cref="Parse"/>, and a separator inside a title
+    /// (<c>Fate/stay night</c>) is left alone. For a set of related files,
+    /// prefer <see cref="ParseTogether"/>.
+    /// </remarks>
+    /// <param name="path">The path to parse.</param>
+    /// <param name="options">
+    /// Which categories to extract; defaults to <see cref="Options.Default"/>
+    /// (all enabled).
+    /// </param>
+    /// <returns>The parsed elements, or an empty list if nothing was found.</returns>
+    public static IReadOnlyList<Element> ParsePath(string path, Options? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+
+        uint mask = (options ?? Options.Default).ToBitmask();
+        nint result = NativeMethods.anitomy_parse_path(path, mask);
+        if (result == nint.Zero)
+        {
+            return Array.Empty<Element>();
+        }
+
         try
         {
             return ReadElements(result);

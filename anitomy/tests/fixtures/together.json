@@ -1,13 +1,221 @@
 [
   {
+    "name": "title-slash-with-release-metadata",
+    "inputs": [
+      "[Doki] Fate/stay night - 01 (1280x720 Hi10P AAC) [123ABCDE].mkv",
+      "[Doki] Fate/stay night - 02 (1280x720 Hi10P AAC) [456BCDEF].mkv"
+    ],
+    "outputs": [
+      {
+        "release_group": "Doki",
+        "title": "Fate/stay night",
+        "episode": "01",
+        "video_resolution": "1280x720",
+        "video_term": "Hi10P",
+        "audio_term": "AAC",
+        "file_checksum": "123ABCDE",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Doki",
+        "title": "Fate/stay night",
+        "episode": "02",
+        "video_resolution": "1280x720",
+        "video_term": "Hi10P",
+        "audio_term": "AAC",
+        "file_checksum": "456BCDEF",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "fate-slash-in-title covers the bare form; this is the same title as a real release. looks_like_filename signal (a) -- 'has release metadata, so it is a filename' -- is true of nearly every filename, so the slash was read as a directory boundary and the title came back as 'stay night'. Path-blind parse() gets this right."
+  },
+  {
+    "name": "title-slash-no-group-tag",
+    "inputs": [
+      "Fate/Zero - 05 [720p].mkv",
+      "Fate/Zero - 06 [720p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Fate/Zero",
+        "episode": "05",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Fate/Zero",
+        "episode": "06",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "The harder half: no group tag, and the segment after the slash is capitalised, so nothing but a resolution marks the tail."
+  },
+  {
+    "name": "nested-path-no-group-tag",
+    "inputs": [
+      "Anime/Show/Show - 05 [1080p].mkv",
+      "Anime/Show/Show - 06 [1080p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "Upper guard on continues_a_title: a real path with no group tag, so the tail has the same evidence Fate/Zero has. It still splits because the greedy title spans both folders."
+  },
+  {
+    "name": "generic-parent-folder-with-group",
+    "inputs": [
+      "Random Folder Name/[SubsPlease] Frieren - 05 (1080p).mkv",
+      "Random Folder Name/[SubsPlease] Frieren - 06 (1080p).mkv"
+    ],
+    "outputs": [
+      {
+        "release_group": "SubsPlease",
+        "title": "Frieren",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "SubsPlease",
+        "title": "Frieren",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun#17",
+    "note": "Lower guard: a folder sharing no text with the file, which signal (a) exists for. The greedy title keeps the group tag, so the join can't match and the veto stays off. hakubun hand-rolled a backtracking regex for this shape."
+  },
+  {
+    "name": "one-level-path-bare-parent-no-group",
+    "inputs": [
+      "Anime/Show - 05 [720p].mkv",
+      "Anime/Show - 06 [720p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "TRACKED KNOWN FAILURE (tests/known_failures/together.txt). The price of continues_a_title: identical in shape to title-slash-no-group-tag, so no rule takes one and leaves the other. Slash-titles were judged more common; a deeper path or a group tag resolves it either way."
+  },
+  {
+    "name": "nested-path-around-slash-title",
+    "inputs": [
+      "Media/Fate/Zero - 05 [720p].mkv",
+      "Media/Fate/Zero - 06 [720p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Fate/Zero",
+        "episode": "05",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Fate/Zero",
+        "episode": "06",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "TRACKED KNOWN FAILURE (tests/known_failures/together.txt). A slash-title inside a real directory: the greedy title is 'Media/Fate/Zero', which 'Fate' + '/' + 'Zero' can't equal, so the last separator wins. Needs the two separators judged against each other."
+  },
+  {
+    "name": "numeric-title-invariant-across-set",
+    "inputs": [
+      "[G] Mob Psycho 100 - Reigen.mkv",
+      "[G] Mob Psycho 100 - Ekubo.mkv"
+    ],
+    "outputs": [
+      {
+        "release_group": "G",
+        "title": "Mob Psycho 100",
+        "episode_title": "Reigen",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "G",
+        "title": "Mob Psycho 100",
+        "episode_title": "Ekubo",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "Ambiguous in one filename -- same shape as 'Beyblade X 11 - Kadovar's Test', where the number IS the episode -- so the per-file parser guesses episode 100 (known failure in anitomy_ng.json). A set resolves it: 100 is repeated by every member, and an episode is what distinguishes one file from the next, so diff.rs demotes it. Not a digit-width rule; see numeric-title-long-runner."
+  },
+  {
+    "name": "numeric-title-long-runner",
+    "inputs": [
+      "[G] One Piece 1015 - Red Roc.mkv",
+      "[G] One Piece 1016 - Luffy.mkv"
+    ],
+    "outputs": [
+      {
+        "release_group": "G",
+        "title": "One Piece",
+        "episode": "1015",
+        "episode_title": "Red Roc",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "G",
+        "title": "One Piece",
+        "episode": "1016",
+        "episode_title": "Luffy",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "anitomy-ng",
+    "note": "Why no digit-width ceiling: four digits here is a real episode (Nintama Rantarou reaches E1821), and it varies across the set, so it survives. Any rule rejecting 'Mob Psycho 100' by digit count would reject these too."
+  },
+  {
     "name": "horriblesubs-batch-folder",
     "inputs": [
       "[HorribleSubs] Oshiete! Galko-chan (01-12) [1080p] (Batch)/[HorribleSubs] Oshiete! Galko-chan - 08 [1080p].mkv",
       "[HorribleSubs] Oshiete! Galko-chan (01-12) [1080p] (Batch)/[HorribleSubs] Oshiete! Galko-chan - 11 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "HorribleSubs", "title": "Oshiete! Galko-chan", "episode": "08", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "HorribleSubs", "title": "Oshiete! Galko-chan", "episode": "11", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "HorribleSubs",
+        "title": "Oshiete! Galko-chan",
+        "episode": "08",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "HorribleSubs",
+        "title": "Oshiete! Galko-chan",
+        "episode": "11",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "github.com/tylergibbs2/anitomy-ng/issues/3",
     "note": "A directory batch range that swallows the real episode in a single-file parse is recovered, and folder-level noise (the '(Batch)' tag, the duplicated resolution) is dropped."
@@ -19,8 +227,16 @@
       "Fate/stay night - 02.mkv"
     ],
     "outputs": [
-      { "title": "Fate/stay night", "episode": "01", "file_extension": "mkv" },
-      { "title": "Fate/stay night", "episode": "02", "file_extension": "mkv" }
+      {
+        "title": "Fate/stay night",
+        "episode": "01",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Fate/stay night",
+        "episode": "02",
+        "file_extension": "mkv"
+      }
     ],
     "source": "github.com/tylergibbs2/anitomy-ng/issues/3",
     "note": "A '/' inside the title is not confused with a path separator, so the title stays whole."
@@ -32,8 +248,18 @@
       "OtherSeries [batch]/04 - Some Other Title.mkv"
     ],
     "outputs": [
-      { "title": "OtherSeries", "episode": "05", "episode_title": "Some Title", "file_extension": "mkv" },
-      { "title": "OtherSeries", "episode": "04", "episode_title": "Some Other Title", "file_extension": "mkv" }
+      {
+        "title": "OtherSeries",
+        "episode": "05",
+        "episode_title": "Some Title",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "OtherSeries",
+        "episode": "04",
+        "episode_title": "Some Other Title",
+        "file_extension": "mkv"
+      }
     ],
     "source": "github.com/tylergibbs2/anitomy-ng/issues/3",
     "note": "The series title is borrowed from the shared parent folder while the zero-padded episode and episode title come from the filename."
@@ -46,9 +272,27 @@
       "[Group] Show - 11 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "09", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "10", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "11", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "09",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "10",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "11",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "An episode run crossing the 09->10 digit-width boundary is handled by the differential."
@@ -61,9 +305,27 @@
       "[Group] Show - 03 [99AA88BB].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "file_checksum": "ABC12345", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "02", "file_checksum": "DEF67890", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "03", "file_checksum": "99AA88BB", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "file_checksum": "ABC12345",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "02",
+        "file_checksum": "DEF67890",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "03",
+        "file_checksum": "99AA88BB",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Per-file CRC hashes vary alongside the episode, but with no directory range the per-file parse is already correct and batch is a safe no-op."
@@ -74,7 +336,13 @@
       "[Group] Show - 07 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "07", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "07",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "One input has no differential signal, so batch equals the single-file parse."
@@ -86,8 +354,20 @@
       "[Other] Beta Show - 05 [720p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Alpha", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Other", "title": "Beta Show", "episode": "05", "video_resolution": "720p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Alpha",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Other",
+        "title": "Beta Show",
+        "episode": "05",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Two different shows share no varying numeric span, so each result is left as its independent parse."
@@ -99,8 +379,20 @@
       "[Group] Show - 01 [480p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "720p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "480p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "480p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The only varying span (720/480) is already typed as resolution, so it isn't promoted to episode and the real episode 01 survives."
@@ -112,8 +404,20 @@
       "Show (01-12)/[G] Show - 02 [12AB34CD].mkv"
     ],
     "outputs": [
-      { "release_group": "G", "title": "Show", "episode": "01", "file_checksum": "DEADBEEF", "file_extension": "mkv" },
-      { "release_group": "G", "title": "Show", "episode": "02", "file_checksum": "12AB34CD", "file_extension": "mkv" }
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "01",
+        "file_checksum": "DEADBEEF",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "02",
+        "file_checksum": "12AB34CD",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A directory range and a per-file CRC both vary; the column-wise diff separates the episode span from the checksum span."
@@ -125,8 +429,20 @@
       "Show (01-12)/[G] Show - 10 [12AB34CD].mkv"
     ],
     "outputs": [
-      { "release_group": "G", "title": "Show", "episode": "9", "file_checksum": "DEADBEEF", "file_extension": "mkv" },
-      { "release_group": "G", "title": "Show", "episode": "10", "file_checksum": "12AB34CD", "file_extension": "mkv" }
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "9",
+        "file_checksum": "DEADBEEF",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "10",
+        "file_checksum": "12AB34CD",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Different-length members (episode 9 -> 10) defeat column alignment, but path segmentation re-parses the filename so the directory range never enters the parse."
@@ -138,8 +454,20 @@
       "Z:\\Media\\[Group] Show (01-12)\\[Group] Show - 06 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "05", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "06", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A mapped Windows network drive (drive letter) has its backslash separators stripped structurally."
@@ -151,8 +479,20 @@
       "\\\\SERVER\\share\\[Group] Show (01-12)\\[Group] Show - 06 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "05", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "06", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A Windows UNC share (leading '\\\\') is treated as an absolute path, so all backslashes are structural separators."
@@ -164,8 +504,20 @@
       "\\\\?\\UNC\\SERVER\\share\\[Group] Show (01-12)\\[Group] Show - 06 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "05", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "06", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The extended-length UNC form (\\\\?\\UNC\\...) still begins with '\\\\', so last-separator-wins skips the extra prefix segments."
@@ -177,8 +529,20 @@
       "D:/Anime\\Show (01-12)/[G] Show - 04 [720p].mkv"
     ],
     "outputs": [
-      { "release_group": "G", "title": "Show", "episode": "03", "video_resolution": "720p", "file_extension": "mkv" },
-      { "release_group": "G", "title": "Show", "episode": "04", "video_resolution": "720p", "file_extension": "mkv" }
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "03",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "G",
+        "title": "Show",
+        "episode": "04",
+        "video_resolution": "720p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A path mixing '/' and '\\' segments on the last separator of either kind."
@@ -190,8 +554,16 @@
       "AC\\DC Documentary - 02.mkv"
     ],
     "outputs": [
-      { "title": "AC\\DC Documentary", "episode": "01", "file_extension": "mkv" },
-      { "title": "AC\\DC Documentary", "episode": "02", "file_extension": "mkv" }
+      {
+        "title": "AC\\DC Documentary",
+        "episode": "01",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "AC\\DC Documentary",
+        "episode": "02",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A backslash inside a title (legal on Unix, with no absolute-path prefix) is kept as content, not split on."
@@ -203,8 +575,22 @@
       "[Group] Show/Season 2/[Group] Show S2 - 02 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "season": "2", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "season": "2", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "season": "2",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "season": "2",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Known failure: a two-level directory isn't segmented, so the folder path leaks into the title."
@@ -216,8 +602,20 @@
       "[Group] 86 - 02 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "86", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "86", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "86",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "86",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "An all-numeric title stays invariant, not swept into the episode differential."
@@ -229,8 +627,20 @@
       "[Group] Mobile Suit Gundam 00 - 02 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Mobile Suit Gundam 00", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Mobile Suit Gundam 00", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Mobile Suit Gundam 00",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Mobile Suit Gundam 00",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A title-terminal number is not confused with the adjacent episode."
@@ -242,8 +652,20 @@
       "[Group] Show - 02 [87654321].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "file_checksum": "12345678", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "02", "file_checksum": "87654321", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "file_checksum": "12345678",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "02",
+        "file_checksum": "87654321",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "An all-numeric CRC varies alongside the episode but is excluded by type, not digit length."
@@ -255,8 +677,22 @@
       "[Group] Show - 05v2 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "05", "release_version": "1", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "05", "release_version": "2", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "release_version": "1",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "release_version": "2",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The episode is invariant; the varying numeric span is the release version."
@@ -268,8 +704,22 @@
       "[Group] Show Vol.2 (BD 1080p).mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "volume": "1", "source": "BD", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "volume": "2", "source": "BD", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "volume": "1",
+        "source": "BD",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "volume": "2",
+        "source": "BD",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The varying numeric span is a volume, so no episode is promoted."
@@ -281,8 +731,22 @@
       "Show.Name.S01E02.1080p.WEB-DL.mkv"
     ],
     "outputs": [
-      { "title": "Show Name", "season": "01", "episode": "01", "video_resolution": "1080p", "source": "WEB-DL", "file_extension": "mkv" },
-      { "title": "Show Name", "season": "01", "episode": "02", "video_resolution": "1080p", "source": "WEB-DL", "file_extension": "mkv" }
+      {
+        "title": "Show Name",
+        "season": "01",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "source": "WEB-DL",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Show Name",
+        "season": "01",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "source": "WEB-DL",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Dot-delimited scene naming with an invariant season and varying episode."
@@ -294,8 +758,20 @@
       "[Group] Show - 02 [1080p].mp4"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "02", "video_resolution": "1080p", "file_extension": "mp4" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mp4"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Episode and file extension both vary; the non-numeric extension span is ignored."
@@ -307,8 +783,20 @@
       "[GroupB] Show - 02 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "GroupA", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "GroupB", "title": "Show", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "GroupA",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "GroupB",
+        "title": "Show",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The release group varies alongside the episode; the non-numeric group span is ignored."
@@ -321,9 +809,27 @@
       "[Group] Show - 03 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "2", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "03", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "2",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "03",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Inconsistent zero-padding across members is preserved per file."
@@ -336,9 +842,27 @@
       "[Group] Show - 06 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "05", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "05.5", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "06", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "05.5",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "06",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A decimal recap episode (05.5) is kept as-is."
@@ -351,9 +875,27 @@
       "[Group] Show - NCED [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "type": "NCED", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "type": "NCED",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A creditless-ending member has no episode number, so the numeric-run gate declines."
@@ -365,8 +907,26 @@
       "[Group] Show - 03-04 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": ["01", "02"], "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": ["03", "04"], "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": [
+          "01",
+          "02"
+        ],
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": [
+          "03",
+          "04"
+        ],
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "Dual-episode files keep both episode numbers per record."
@@ -378,8 +938,18 @@
       "Cowboy Bebop/02 - Stray Dog Strut.mkv"
     ],
     "outputs": [
-      { "title": "Cowboy Bebop", "episode": "01", "episode_title": "Asteroid Blues", "file_extension": "mkv" },
-      { "title": "Cowboy Bebop", "episode": "02", "episode_title": "Stray Dog Strut", "file_extension": "mkv" }
+      {
+        "title": "Cowboy Bebop",
+        "episode": "01",
+        "episode_title": "Asteroid Blues",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "Cowboy Bebop",
+        "episode": "02",
+        "episode_title": "Stray Dog Strut",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A folder named only for the show (no brackets) is split off because the file has no title of its own, and the title is borrowed."
@@ -391,8 +961,16 @@
       "My Show/My Show - 02.mkv"
     ],
     "outputs": [
-      { "title": "My Show", "episode": "01", "file_extension": "mkv" },
-      { "title": "My Show", "episode": "02", "file_extension": "mkv" }
+      {
+        "title": "My Show",
+        "episode": "01",
+        "file_extension": "mkv"
+      },
+      {
+        "title": "My Show",
+        "episode": "02",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "The folder restates the file's title, so the separator is a real boundary even with no other metadata."
@@ -404,8 +982,20 @@
       "Anime/[Group] Show/Season 1/[Group] Show - 02 [1080p].mkv"
     ],
     "outputs": [
-      { "release_group": "Group", "title": "Show", "episode": "01", "video_resolution": "1080p", "file_extension": "mkv" },
-      { "release_group": "Group", "title": "Show", "episode": "02", "video_resolution": "1080p", "file_extension": "mkv" }
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "01",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Group",
+        "title": "Show",
+        "episode": "02",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A three-level path segments to the filename regardless of depth."
@@ -417,8 +1007,18 @@
       "[Studio] Fate/stay night - 02.mkv"
     ],
     "outputs": [
-      { "release_group": "Studio", "title": "Fate/stay night", "episode": "01", "file_extension": "mkv" },
-      { "release_group": "Studio", "title": "Fate/stay night", "episode": "02", "file_extension": "mkv" }
+      {
+        "release_group": "Studio",
+        "title": "Fate/stay night",
+        "episode": "01",
+        "file_extension": "mkv"
+      },
+      {
+        "release_group": "Studio",
+        "title": "Fate/stay night",
+        "episode": "02",
+        "file_extension": "mkv"
+      }
     ],
     "source": "anitomy-ng",
     "note": "A group tag before an in-title '/' must not make the slash a boundary: the tail 'stay night' carries no metadata of its own, so the title stays whole."

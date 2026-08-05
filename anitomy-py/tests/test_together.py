@@ -79,3 +79,36 @@ def test_result_count_matches_input_count() -> None:
     # returned one record each, in order.
     mixed = ["[A] Alpha - 01.mkv", "", "C:\\x\\[G] Gamma - 03.mkv"]
     assert len(anitomy.parse_together(mixed)) == len(mixed)
+
+
+def test_parse_path_matches_a_single_item_batch():
+    """Pins the two entry points to each other rather than to expected output,
+    so known-failure cases count too."""
+    cases = json.loads((FIXTURES_DIR / "together.json").read_text(encoding="utf-8"))
+    checked = 0
+    for case in cases:
+        for name in case["inputs"]:
+            checked += 1
+            assert anitomy.parse_path(name) == anitomy.parse_together([name])[0]
+    assert checked > 0
+
+
+def test_parse_path_is_plain_parse_without_a_directory():
+    bare = "[HorribleSubs] Show - 08 [1080p].mkv"
+    assert anitomy.parse_path(bare) == anitomy.parse(bare)
+
+
+def test_parse_path_strips_a_real_directory():
+    def title(elements):
+        return next(e.value for e in elements if e.kind is anitomy.ElementKind.TITLE)
+
+    echoed = "My Show/My Show - 01.mkv"
+    assert title(anitomy.parse(echoed)) == "My Show/My Show"
+    assert title(anitomy.parse_path(echoed)) == "My Show"
+
+
+def test_parse_path_leaves_a_slash_inside_a_title_alone():
+    def title(elements):
+        return next(e.value for e in elements if e.kind is anitomy.ElementKind.TITLE)
+
+    assert title(anitomy.parse_path("Fate/Zero - 05 [720p].mkv")) == "Fate/Zero"

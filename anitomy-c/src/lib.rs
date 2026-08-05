@@ -188,6 +188,45 @@ pub struct AnitomyResult {
 /// `input` must be NULL or a valid pointer to a NUL-terminated string.
 #[no_mangle]
 pub unsafe extern "C" fn anitomy_parse(input: *const c_char, options: u32) -> *mut AnitomyResult {
+    // SAFETY: forwarded to `parse_with`'s contract, which is this one.
+    unsafe { parse_with(input, options, anitomy_ng::parse) }
+}
+
+/// Parses a single filename that may carry a directory prefix, so the result
+/// describes the file rather than the folder.
+///
+/// [`anitomy_parse`] leaves a path's separators and duplicated folder text in
+/// the title; this strips a real directory prefix and recovers a title that
+/// lives only in the parent folder. Without a prefix it behaves exactly like
+/// [`anitomy_parse`], and a separator inside a title (`Fate/stay night`) is left
+/// alone. For a set of related files, prefer [`anitomy_parse_together`].
+///
+/// Returns an owning handle the caller must release with
+/// [`anitomy_result_free`], or NULL under the same conditions as
+/// [`anitomy_parse`].
+///
+/// # Safety
+///
+/// `input` must be NULL or a valid pointer to a NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn anitomy_parse_path(
+    input: *const c_char,
+    options: u32,
+) -> *mut AnitomyResult {
+    // SAFETY: forwarded to `parse_with`'s contract, which is this one.
+    unsafe { parse_with(input, options, anitomy_ng::parse_path) }
+}
+
+/// Shared body for [`anitomy_parse`] and [`anitomy_parse_path`].
+///
+/// # Safety
+///
+/// `input` must be NULL or a valid pointer to a NUL-terminated string.
+unsafe fn parse_with(
+    input: *const c_char,
+    options: u32,
+    parse: fn(&str, anitomy_ng::Options) -> Vec<anitomy_ng::Element>,
+) -> *mut AnitomyResult {
     // The core never panics (see anitomy's tests/no_panic.rs), but unwinding
     // across the FFI boundary is UB, so contain it and degrade to NULL.
     let parsed = panic::catch_unwind(AssertUnwindSafe(|| {
@@ -199,7 +238,7 @@ pub unsafe extern "C" fn anitomy_parse(input: *const c_char, options: u32) -> *m
         let bytes = unsafe { CStr::from_ptr(input) };
         let text = bytes.to_str().ok()?;
 
-        let items = anitomy_ng::parse(text, options_from_bits(options))
+        let items = parse(text, options_from_bits(options))
             .into_iter()
             .map(|e| CElement {
                 kind: kind_to_u32(e.kind),

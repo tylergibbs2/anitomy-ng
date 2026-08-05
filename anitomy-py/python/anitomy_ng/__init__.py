@@ -15,9 +15,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from ._anitomy import Options, parse as _parse, parse_together as _parse_together
+from ._anitomy import (
+    Options,
+    parse as _parse,
+    parse_path as _parse_path,
+    parse_together as _parse_together,
+)
 
-__all__ = ["ElementKind", "Element", "Options", "parse", "parse_together"]
+__all__ = ["ElementKind", "Element", "Options", "parse", "parse_path", "parse_together"]
 
 
 class ElementKind(Enum):
@@ -61,6 +66,21 @@ def parse(filename: str, options: Options | None = None) -> list[Element]:
     return [
         Element(kind=ElementKind(raw.kind), value=raw.value, position=raw.position)
         for raw in _parse(filename, options)
+    ]
+
+
+def parse_path(path: str, options: Options | None = None) -> list[Element]:
+    """Parse a single anime filename that may carry a directory prefix.
+
+    ``parse`` leaves a path's separators and duplicated folder text in the
+    title; this strips a real directory prefix and recovers a title that lives
+    only in the parent folder. Without a prefix it is exactly ``parse``, and a
+    separator inside a title (``Fate/stay night``) is left alone. For a set of
+    related files, prefer ``parse_together``.
+    """
+    return [
+        Element(kind=ElementKind(raw.kind), value=raw.value, position=raw.position)
+        for raw in _parse_path(path, options)
     ]
 
 

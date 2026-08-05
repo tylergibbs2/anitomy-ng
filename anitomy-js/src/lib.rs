@@ -156,6 +156,29 @@ pub fn parse(filename: &str, options: Option<Options>) -> Result<Elements, JsVal
     Ok(value.unchecked_into())
 }
 
+/// Parse a single filename that may carry a directory prefix, so the result
+/// describes the file rather than the folder.
+///
+/// `parse` leaves a path's separators and duplicated folder text in the title;
+/// this strips a real directory prefix and recovers a title that lives only in
+/// the parent folder. Without a prefix it is exactly `parse`, and a separator
+/// inside a title (`Fate/stay night`) is left alone. For a set of related files,
+/// prefer `parse_together`.
+#[wasm_bindgen]
+pub fn parse_path(path: &str, options: Option<Options>) -> Result<Elements, JsValue> {
+    let opts = options.map(CoreOptions::from).unwrap_or_default();
+    let elements: Vec<Element> = anitomy_ng::parse_path(path, opts)
+        .into_iter()
+        .map(|el| Element {
+            kind: el.kind.into(),
+            value: el.value,
+            position: el.position,
+        })
+        .collect();
+    let value = serde_wasm_bindgen::to_value(&elements)?;
+    Ok(value.unchecked_into())
+}
+
 /// Parse a set of related filenames together, returning one `Element[]` per
 /// input in the same order (result `i` is for `filenames[i]`).
 ///

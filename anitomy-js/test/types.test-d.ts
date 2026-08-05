@@ -7,7 +7,7 @@
 // intended API — it never runs, so it needs no wasm. Built types live at
 // dist-npm/bundler/ (see scripts/build-npm.sh), which is what the package's
 // `types` field points at.
-import { parse, parse_together } from "../../dist-npm/bundler/anitomy_ng";
+import { parse, parse_path, parse_together } from "../../dist-npm/bundler/anitomy_ng";
 import type { Element, ElementKind, Options } from "../../dist-npm/bundler/anitomy_ng";
 
 // parse() returns Element[]; each field has its expected type.
@@ -32,6 +32,11 @@ parse("Show - 01.mkv", opts);
 const batch: Element[][] = parse_together(["Show - 01.mkv", "Show - 02.mkv"]);
 void batch;
 parse_together(["Show - 01.mkv"], opts);
+
+// parse_path() takes a single string and returns Element[], like parse().
+const fromPath: Element[] = parse_path("Show (01-12)/Show - 05.mkv");
+void fromPath;
+parse_path("Show - 01.mkv", opts);
 
 // ElementKind is the snake_case string union.
 const known: ElementKind = "release_group";

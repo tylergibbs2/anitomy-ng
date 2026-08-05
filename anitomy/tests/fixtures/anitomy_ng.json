@@ -31,8 +31,15 @@
       "title": "That Time I Got Reincarnated as a Slime",
       "season": "04",
       "episode": "11",
-      "source": ["CR", "WEB-DL"],
-      "audio_term": ["AAC", "2.0", "Dual-Audio"],
+      "source": [
+        "CR",
+        "WEB-DL"
+      ],
+      "audio_term": [
+        "AAC",
+        "2.0",
+        "Dual-Audio"
+      ],
       "video_term": "H.264",
       "video_resolution": "1080p",
       "subtitles": "Multi-Subs"
@@ -75,7 +82,11 @@
       "episode": "37",
       "source": "WEB",
       "video_resolution": "1080p",
-      "video_term": ["HEVC", "x265", "10-bit"],
+      "video_term": [
+        "HEVC",
+        "x265",
+        "10-bit"
+      ],
       "audio_term": "Dual-Audio"
     }
   },
@@ -99,7 +110,11 @@
       "title": "LIAR GAME",
       "episode": "14",
       "video_resolution": "1080p",
-      "video_term": ["HEVC", "x265", "10Bit"],
+      "video_term": [
+        "HEVC",
+        "x265",
+        "10Bit"
+      ],
       "audio_term": "AAC"
     }
   },
@@ -121,7 +136,10 @@
       "release_group": "SubsPlease",
       "title": "LasTame",
       "season": "2",
-      "episode": ["01", "12"],
+      "episode": [
+        "01",
+        "12"
+      ],
       "video_resolution": "1080p",
       "release_information": "Batch"
     }
@@ -136,8 +154,15 @@
       "episode": "11",
       "episode_title": "Contraband Game",
       "video_resolution": "1080p",
-      "source": ["CR", "WEB-DL"],
-      "audio_term": ["AAC", "2.0", "Multi-Audio"],
+      "source": [
+        "CR",
+        "WEB-DL"
+      ],
+      "audio_term": [
+        "AAC",
+        "2.0",
+        "Multi-Audio"
+      ],
       "video_term": "H 264",
       "release_group": "VARYG",
       "subtitles": "Multi-Subs"
@@ -152,7 +177,10 @@
       "title": "Grand Blue",
       "season": "3",
       "episode": "01",
-      "video_term": ["x265", "10bit"],
+      "video_term": [
+        "x265",
+        "10bit"
+      ],
       "video_resolution": "1080p",
       "file_extension": "mkv"
     }
@@ -164,7 +192,10 @@
     "output": {
       "release_group": "WBDP",
       "title": "The Morose Mononokean",
-      "season": ["1", "2"],
+      "season": [
+        "1",
+        "2"
+      ],
       "release_information": "Complete",
       "source": "BD",
       "video_resolution": "1080p",
@@ -182,7 +213,10 @@
       "season": "01",
       "source": "BD",
       "video_resolution": "1080p",
-      "video_term": ["x264", "10-bit"],
+      "video_term": [
+        "x264",
+        "10-bit"
+      ],
       "audio_term": "Opus"
     }
   },
@@ -196,7 +230,11 @@
       "season": "04",
       "part": "3",
       "video_resolution": "1080p",
-      "video_term": ["HEVC", "x265", "10bit"],
+      "video_term": [
+        "HEVC",
+        "x265",
+        "10bit"
+      ],
       "audio_term": "Dual-Audio",
       "subtitles": "Multi-Subs",
       "release_information": "Batch"
@@ -212,7 +250,11 @@
       "season": "1",
       "part": "2",
       "video_resolution": "1080p",
-      "video_term": ["HEVC", "x265", "10bit"],
+      "video_term": [
+        "HEVC",
+        "x265",
+        "10bit"
+      ],
       "subtitles": "Multi-Subs",
       "release_information": "Batch"
     }
@@ -224,7 +266,10 @@
     "output": {
       "release_group": "HuangSubs",
       "title": "Martial Universe",
-      "season": ["4", "6"],
+      "season": [
+        "4",
+        "6"
+      ],
       "video_resolution": "1080p"
     }
   },
@@ -240,8 +285,15 @@
       "release_information": "Batch",
       "source": "BD",
       "video_resolution": "1080p",
-      "video_term": ["HEVC", "AV1"],
-      "audio_term": ["OPUS", "AAC", "Dual Audio"]
+      "video_term": [
+        "HEVC",
+        "AV1"
+      ],
+      "audio_term": [
+        "OPUS",
+        "AAC",
+        "Dual Audio"
+      ]
     }
   },
   {
@@ -252,12 +304,18 @@
       "release_group": "nekotan",
       "title": "The Fruit of Grisaia",
       "season": "00",
-      "episode": ["01", "06"],
+      "episode": [
+        "01",
+        "06"
+      ],
       "type": "Specials",
       "source": "BD",
       "release_information": "Remux",
       "video_resolution": "1080p",
-      "video_term": ["x264", "8-bit"],
+      "video_term": [
+        "x264",
+        "8-bit"
+      ],
       "audio_term": "FLAC"
     }
   },
@@ -271,7 +329,10 @@
       "season": "3",
       "episode": "23",
       "part": "2",
-      "source": ["BILI", "WEB-DL"],
+      "source": [
+        "BILI",
+        "WEB-DL"
+      ],
       "video_resolution": "1080P",
       "video_term": "AVC",
       "audio_term": "AAC",
@@ -286,7 +347,11 @@
     "output": {
       "release_group": "WonderhoyRips",
       "title": "BLEACH: Thousand-Year Blood War - The Calamity",
-      "episode": ["41", "42", "43"],
+      "episode": [
+        "41",
+        "42",
+        "43"
+      ],
       "video_resolution": "720p",
       "video_term": "H.264",
       "audio_term": "AAC",
@@ -310,7 +375,10 @@
       "episode": "06",
       "release_version": "1.5",
       "video_resolution": "1080p",
-      "audio_term": ["AAC", "JapDub"],
+      "audio_term": [
+        "AAC",
+        "JapDub"
+      ],
       "subtitles": "GerEngSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -367,7 +435,10 @@
       "title": "2.5 Jigen no Ririsa",
       "episode": "01",
       "video_resolution": "1080p",
-      "audio_term": ["E-AC-3", "JapDub"],
+      "audio_term": [
+        "E-AC-3",
+        "JapDub"
+      ],
       "subtitles": "GerSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -379,9 +450,15 @@
     "note": "Dashed `E01-E02` range is parsed as two episodes (01 and 02), not episode 01 plus an episode_title of `E02`.",
     "output": {
       "title": "NEET Kunoichi to Naze ka Dousei Hajimemashita",
-      "episode": ["01", "02"],
+      "episode": [
+        "01",
+        "02"
+      ],
       "video_resolution": "1080p",
-      "audio_term": ["AAC", "JapDub"],
+      "audio_term": [
+        "AAC",
+        "JapDub"
+      ],
       "subtitles": "GerSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -403,7 +480,10 @@
     "output": {
       "title": "Ore wa Seikan Kokka no Akutoku Ryoushu! E1P",
       "video_resolution": "1080p",
-      "audio_term": ["AAC", "JapDub"],
+      "audio_term": [
+        "AAC",
+        "JapDub"
+      ],
       "subtitles": "GerEngSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -417,7 +497,10 @@
       "title": "Fujimoto Tatsuki 17-26",
       "episode": "01",
       "video_resolution": "1080p",
-      "audio_term": ["E-AC-3", "GerJapDub"],
+      "audio_term": [
+        "E-AC-3",
+        "GerJapDub"
+      ],
       "subtitles": "GerEngSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -431,7 +514,10 @@
       "title": "Boukensha ni Naritai",
       "episode": "03",
       "video_resolution": "1080p",
-      "audio_term": ["AAC", "KorChiDub"],
+      "audio_term": [
+        "AAC",
+        "KorChiDub"
+      ],
       "subtitles": "GerEngJapSub",
       "source": "Web-DL",
       "file_extension": "mkv"
@@ -472,7 +558,16 @@
       "episode": "09",
       "video_resolution": "480p",
       "subtitles": "Multiple Subtitle",
-      "language": ["ENG", "POR-BR", "SPA-LA", "SPA", "ARA", "FRE", "GER", "ITA"]
+      "language": [
+        "ENG",
+        "POR-BR",
+        "SPA-LA",
+        "SPA",
+        "ARA",
+        "FRE",
+        "GER",
+        "ITA"
+      ]
     }
   },
   {
@@ -482,9 +577,19 @@
     "output": {
       "title": "Queen Emeraldas OVA",
       "type": "OVA",
-      "audio_term": ["MULTI.Audio", "AC3"],
+      "audio_term": [
+        "MULTI.Audio",
+        "AC3"
+      ],
       "subtitles": "Sub",
-      "language": ["FRE", "ENG", "SPA", "GER", "POR", "CHI"],
+      "language": [
+        "FRE",
+        "ENG",
+        "SPA",
+        "GER",
+        "POR",
+        "CHI"
+      ],
       "video_resolution": "480p",
       "source": "DVDRip",
       "video_term": "x264",
@@ -500,10 +605,16 @@
       "title": "Fate-Zero",
       "video_resolution": "1080P",
       "source": "BDRip",
-      "video_term": ["HEVC", "10bit"],
+      "video_term": [
+        "HEVC",
+        "10bit"
+      ],
       "audio_term": "FLAC",
       "subtitles": "Subs",
-      "language": ["EN", "DE-GER"]
+      "language": [
+        "EN",
+        "DE-GER"
+      ]
     }
   },
   {
@@ -515,7 +626,15 @@
       "source": "BDRip",
       "video_resolution": "1080p",
       "video_term": "HQ",
-      "language": ["Rus", "Eng", "Fre", "Ger", "Ita", "Spa", "Jap"],
+      "language": [
+        "Rus",
+        "Eng",
+        "Fre",
+        "Ger",
+        "Ita",
+        "Spa",
+        "Jap"
+      ],
       "release_group": "SDIncorporation"
     }
   },
@@ -526,7 +645,10 @@
     "output": {
       "release_group": "Group",
       "title": "Show",
-      "episode": ["17", "26"],
+      "episode": [
+        "17",
+        "26"
+      ],
       "video_resolution": "1080p",
       "file_extension": "mkv"
     }
@@ -539,7 +661,10 @@
       "release_group": "Group",
       "title": "Show",
       "season": "01",
-      "episode": ["17", "26"],
+      "episode": [
+        "17",
+        "26"
+      ],
       "video_resolution": "1080p",
       "file_extension": "mkv"
     }
@@ -592,6 +717,102 @@
       "episode": "01",
       "video_resolution": "1080p",
       "file_extension": "mp4"
+    }
+  },
+  {
+    "input": "[HiCost] Paranoia Agent - s01e02 - The Golden Shoes.mkv",
+    "source": "trektn/hakubun#17",
+    "note": "Lowercase `s01e02`. The season/episode pattern was capital-only, so nothing matched and the whole run collapsed into the title with no episode at all -- silent corruption, since a consumer defaulting to episode 1 files the wrong episode. Upstream has the same gap.",
+    "output": {
+      "release_group": "HiCost",
+      "title": "Paranoia Agent",
+      "season": "01",
+      "episode": "02",
+      "episode_title": "The Golden Shoes",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Kaguya-sama wa Kokurasetai s02e05 1080p.mkv",
+    "source": "anitomy-ng",
+    "note": "The same token unbracketed and undashed, so the fix isn't tied to the surrounding `- ... -` shape.",
+    "output": {
+      "title": "Kaguya-sama wa Kokurasetai",
+      "season": "02",
+      "episode": "05",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Doki] Nichijou - 01X12 (1280x720 Hi10P AAC) [A1B2C3D4].mkv",
+    "source": "anitomy-ng",
+    "note": "The `NNxNN` form with a capital X -- the other half of the case-sensitivity gap. The lowercase `x` in 1280x720 is unaffected.",
+    "output": {
+      "release_group": "Doki",
+      "title": "Nichijou",
+      "season": "01",
+      "episode": "12",
+      "video_resolution": "1280x720",
+      "video_term": "Hi10P",
+      "audio_term": "AAC",
+      "file_checksum": "A1B2C3D4",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[SubsPlease] Yoru no Kurage wa Oyogenai - 12 (1080p) [ED8648EA].mkv",
+    "source": "trektn/hakubun#17",
+    "note": "`ED`/`OP` are type keywords that are also valid hex and prefix-for-number, so the tokenizer split this CRC-32 into `ED` plus a stray `8648EA`: no checksum, and a real episode mislabelled as an ending clip. A text run of exactly 8 hex digits is no longer eligible for that split.",
+    "output": {
+      "release_group": "SubsPlease",
+      "title": "Yoru no Kurage wa Oyogenai",
+      "episode": "12",
+      "video_resolution": "1080p",
+      "file_checksum": "ED8648EA",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Zurako] Nichijou - NCED1 (BD 1280x720 x264 AAC) [ED8648EA].mkv",
+    "source": "anitomy-ng",
+    "note": "Guard for the case above: a genuine prefix-for-number keyword must still split, and must do so in a filename that also carries an ED-prefixed checksum.",
+    "output": {
+      "release_group": "Zurako",
+      "title": "Nichijou",
+      "type": "NCED",
+      "episode": "1",
+      "source": "BD",
+      "video_resolution": "1280x720",
+      "video_term": "x264",
+      "audio_term": "AAC",
+      "file_checksum": "ED8648EA",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[HnY] Beyblade X 11 - Kadovar's Test (1080p) v2.mkv",
+    "source": "trektn/hakubun#17",
+    "note": "`Title NN - Episode Title`, the number preceded by a word rather than a dash. The last-number strategy rejects any number with a free token on both sides, so this emitted no episode and folded both into the title. A dash now overrides that; see separated_by_dash.",
+    "output": {
+      "release_group": "HnY",
+      "title": "Beyblade X",
+      "episode": "11",
+      "episode_title": "Kadovar's Test",
+      "video_resolution": "1080p",
+      "release_version": "2",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[G] Mob Psycho 100 - Reigen Arataka.mkv",
+    "source": "anitomy-ng",
+    "note": "TRACKED KNOWN FAILURE (tests/known_failures/anitomy_ng.txt). `100` belongs to the title and `Reigen Arataka` is the episode title. A single filename can't reach this -- separated_by_dash guesses `100` is the episode, and telling it apart from `Beyblade X 11 - Kadovar's Test` needs to know `Mob Psycho 100` is the series. parse_together does get it right; see together.json's numeric-title-invariant-across-set.",
+    "output": {
+      "release_group": "G",
+      "title": "Mob Psycho 100",
+      "episode_title": "Reigen Arataka",
+      "file_extension": "mkv"
     }
   }
 ]

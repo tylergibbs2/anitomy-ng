@@ -29,6 +29,14 @@ internal static partial class NativeMethods
     [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial nint anitomy_parse(string input, uint options);
 
+    /// <summary>
+    /// Parses a UTF-8 path, stripping a real directory prefix first; returns an
+    /// owning result handle (or <see cref="nint.Zero"/> on failure) that must be
+    /// freed with <see cref="anitomy_result_free"/>.
+    /// </summary>
+    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
+    internal static partial nint anitomy_parse_path(string input, uint options);
+
     [LibraryImport(Lib)]
     internal static partial nuint anitomy_result_len(nint result);
 

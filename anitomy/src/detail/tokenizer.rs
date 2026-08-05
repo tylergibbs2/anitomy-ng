@@ -163,7 +163,27 @@ fn take_keyword<'a>(
         return None;
     }
 
+    // `ED`/`OP` are type keywords that are also valid hex, so without this
+    // `ED8648EA` splits into the `ED` keyword plus a stray `8648EA`, losing the
+    // checksum and mislabelling a real episode as an ending clip.
+    if keyword.prefix_for_number && is_checksum_run(chars, *pos) {
+        return None;
+    }
+
     Some((take(input, offsets, pos, n), keyword))
+}
+
+/// Is the maximal text run at `start` shaped exactly like a CRC-32 checksum?
+fn is_checksum_run(chars: &[char], start: usize) -> bool {
+    let run = chars.iter().skip(start).take_while(|&&c| is_text_char(c));
+    let mut count = 0;
+    for c in run {
+        count += 1;
+        if count > 8 || !c.is_ascii_hexdigit() {
+            return false;
+        }
+    }
+    count == 8
 }
 
 /// Matches a composite `<lang-code>+Sub/Dub` tag (e.g. `GerJapDub`) against the

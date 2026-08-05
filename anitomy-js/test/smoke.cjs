@@ -10,7 +10,7 @@ const assert = require("node:assert");
 const path = require("node:path");
 
 const pkgDir = process.argv[2] || path.join(__dirname, "..", "..", "dist-npm");
-const { parse, parse_together } = require(path.join(pkgDir, "node", "anitomy_ng.js"));
+const { parse, parse_path, parse_together } = require(path.join(pkgDir, "node", "anitomy_ng.js"));
 
 const name =
   "[TaigaSubs] Toradora! (2008) - 01v2 [1280x720 H.264 FLAC][1234ABCD].mkv";
@@ -56,5 +56,15 @@ assert(
     batch[1].some((e) => e.kind === "episode" && e.value === "02"),
   "batch should recover the real per-file episodes",
 );
+
+// parse_path strips a directory prefix; a slash inside a title is left alone.
+const echoed = parse_path("My Show/My Show - 01.mkv");
+const echoedTitle = echoed.find((e) => e.kind === "title");
+assert.strictEqual(echoedTitle && echoedTitle.value, "My Show");
+
+const slashTitle = parse_path("Fate/Zero - 05 [720p].mkv").find((e) => e.kind === "title");
+assert.strictEqual(slashTitle && slashTitle.value, "Fate/Zero");
+
+assert.deepStrictEqual(parse_path(name), parse(name));
 
 console.log(`smoke test passed (${elements.length} elements parsed)`);

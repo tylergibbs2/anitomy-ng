@@ -107,6 +107,37 @@ public class AnitomyTests
     }
 
     [Fact]
+    public void ParsePathStripsARealDirectory()
+    {
+        const string Echoed = "My Show/My Show - 01.mkv";
+        Assert.Contains(Anitomy.Parse(Echoed), e => e.Kind == ElementKind.Title && e.Value == "My Show/My Show");
+        Assert.Contains(Anitomy.ParsePath(Echoed), e => e.Kind == ElementKind.Title && e.Value == "My Show");
+    }
+
+    [Fact]
+    public void ParsePathLeavesASlashInsideATitleAlone()
+    {
+        Assert.Contains(
+            Anitomy.ParsePath("Fate/Zero - 05 [720p].mkv"),
+            e => e.Kind == ElementKind.Title && e.Value == "Fate/Zero");
+    }
+
+    [Fact]
+    public void ParsePathWithoutADirectoryMatchesParse()
+    {
+        const string Bare = "[HorribleSubs] Show - 08 [1080p].mkv";
+        Assert.Equal(
+            Anitomy.Parse(Bare).Select(e => (e.Kind, e.Value, e.Position)),
+            Anitomy.ParsePath(Bare).Select(e => (e.Kind, e.Value, e.Position)));
+    }
+
+    [Fact]
+    public void ParsePathRejectsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => Anitomy.ParsePath(null!));
+    }
+
+    [Fact]
     public void ParseTogetherReturnsOneResultPerInput()
     {
         // Including an empty batch and a heterogeneous one — result count must

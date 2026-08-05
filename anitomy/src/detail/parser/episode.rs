@@ -60,11 +60,12 @@ struct EpisodeTokenMatch {
 }
 
 /// `(?:S(\d{1,2})|(\d{1,2})x)?[E#]?(\d{1,4})(?:[vV](\d))?`, full match.
+/// Case-insensitive: upstream misses `s01e02` and `01X02` for no reason but case.
 fn episode_token_pattern() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         crate::detail::regex_util::compile(
-            r"^(?:S([0-9]{1,2})|([0-9]{1,2})x)?[E#]?([0-9]{1,4})(?:[vV]([0-9]))?$",
+            r"(?i-u)^(?:S([0-9]{1,2})|([0-9]{1,2})x)?[E#]?([0-9]{1,4})(?:[vV]([0-9]))?$",
         )
     })
 }
@@ -614,6 +615,26 @@ fn is_version_number_reversed(tokens: &[Token], idx: usize) -> bool {
         .is_some_and(|t| is_delimiter_token(t) && t.value == ".")
 }
 
+/// Does a dash separate the number at `idx` from the next free token at `n`?
+///
+/// In `Show 11 - Episode Name` the dash makes the number its own field rather
+/// than a word in a title. It's still a guess — `Golgo 13 - The Professional`
+/// is the same shape with the number in the title — so a bare single digit,
+/// overwhelmingly a sequel marker (`Fairy Tail 2`), is excluded. No upper
+/// bound: episodes run past a thousand. [`crate::parse_together`] settles the
+/// ambiguity from cross-file evidence when a set is available.
+fn separated_by_dash(tokens: &[Token], idx: usize, n: usize) -> bool {
+    if !tokens
+        .get(idx)
+        .is_some_and(|t| t.value.chars().count() >= 2)
+    {
+        return false;
+    }
+    tokens
+        .get(idx.saturating_add(1)..n)
+        .is_some_and(|between| between.iter().any(is_dash_token))
+}
+
 fn parse_last_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool {
     let candidates: Vec<usize> = tokens
         .iter()
@@ -656,7 +677,9 @@ fn parse_last_number(tokens: &mut [Token], elements: &mut Vec<Element>) -> bool 
             }
         }
         if let (Some(p), Some(n)) = (prev, next) {
-            if tokens.get(p).is_some_and(is_free_token) && tokens.get(n).is_some_and(is_free_token)
+            if tokens.get(p).is_some_and(is_free_token)
+                && tokens.get(n).is_some_and(is_free_token)
+                && !separated_by_dash(tokens, idx, n)
             {
                 continue;
             }

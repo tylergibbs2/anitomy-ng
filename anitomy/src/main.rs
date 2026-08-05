@@ -39,6 +39,10 @@ struct Cli {
     #[arg(short = 't', long)]
     together: bool,
 
+    /// Treat each input as a path, stripping its directory prefix
+    #[arg(short = 'p', long, conflicts_with = "together")]
+    path: bool,
+
     // clap derives each long flag from the field name (`no_episode` ->
     // `--no-episode`) and uses the doc comment as its help text.
     /// Disable episode parsing
@@ -113,10 +117,15 @@ fn main() -> ExitCode {
         let parsed = parse_together_grouped(&inputs, options);
         inputs.into_iter().zip(parsed).collect()
     } else {
+        let parse = if cli.path {
+            anitomy_ng::parse_path
+        } else {
+            anitomy_ng::parse
+        };
         inputs
             .into_iter()
             .map(|name| {
-                let elements = anitomy_ng::parse(&name, options);
+                let elements = parse(&name, options);
                 (name, elements)
             })
             .collect()

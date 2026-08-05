@@ -13,7 +13,7 @@ use crate::options::Options;
 
 /// Re-parse the filename component as authoritative, borrowing only a missing
 /// title from the parent folder; inputs with no directory prefix are unchanged.
-pub(super) fn parse_one(input: &str, options: Options) -> Vec<Element> {
+pub(crate) fn parse_one(input: &str, options: Options) -> Vec<Element> {
     let chars: Vec<char> = input.chars().collect();
 
     let Some(dir_end) = directory_boundary(&chars, options) else {
@@ -56,12 +56,10 @@ pub(super) fn parse_one(input: &str, options: Options) -> Vec<Element> {
 ///
 /// An absolute-path prefix (`C:\`, `\\server\`) splits at its last separator.
 /// Otherwise the boundary is the rightmost separator whose trailing component
-/// parses as a real filename (see [`looks_like_filename`]). Deciding by
-/// re-parsing the candidate segment — rather than trusting the greedy
-/// whole-string parse's title span — is what lets a real folder be split off
-/// while a `/` in `Fate/stay night` or a `\` in `AC\DC` is left alone: the
-/// whole-string parse absorbs both a real separator and an in-title one into a
-/// single title element, so its spans can't tell them apart.
+/// parses as a real filename (see [`looks_like_filename`]). Re-parsing the
+/// candidate segment, rather than trusting the greedy title span, is what keeps
+/// a `\` in `AC\DC` intact — the greedy parse absorbs a real separator and an
+/// in-title one alike. [`continues_a_title`] is where that span still gets a say.
 fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
     if has_absolute_windows_prefix(chars) {
         return chars
@@ -70,17 +68,91 @@ fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
             .map(|i| i.saturating_add(1));
     }
 
+    // Most inputs are a bare filename; leave before paying for the whole parse.
+    if !chars.iter().any(|&c| is_path_separator(c)) {
+        return None;
+    }
+
+    let whole: String = chars.iter().collect();
+    let whole_elements = crate::parse(&whole, options);
+
     for i in (0..chars.len()).rev() {
         if !chars.get(i).is_some_and(|&c| is_path_separator(c)) {
             continue;
         }
         let prefix = chars.get(..i).unwrap_or_default();
         let tail = chars.get(i.saturating_add(1)..).unwrap_or_default();
-        if looks_like_filename(prefix, tail, options) {
+        // Shared: both tests below ask about this same segment.
+        let tail_input: String = tail.iter().collect();
+        let tail_elements = crate::parse(&tail_input, options);
+        if continues_a_title(&whole_elements, &tail_elements, chars, i, prefix, options) {
+            continue;
+        }
+        if looks_like_filename(&tail_elements, prefix, options) {
             return Some(i.saturating_add(1));
         }
     }
     None
+}
+
+/// Does the greedy parse account for this separator as part of one title?
+///
+/// `Fate/Zero - 05 [720p].mkv` and `Anime/Show - 05 [720p].mkv` are the same
+/// shape, so nothing local separates a franchise slash from a one-level path.
+/// The tie-breaker is whether the greedy title is *exactly* the component
+/// before the separator, the separator, and the tail's own title. That fails
+/// once the tail carries anything the folder wouldn't (a group tag in
+/// `Random Folder/[SubsPlease] Frieren`) or the path runs deeper.
+///
+/// Comparing parsed titles rather than raw text keeps `[Doki] Fate/stay night`
+/// working. Equal titles either side are the folder-echo case, a real
+/// directory, so they never veto.
+fn continues_a_title(
+    whole_elements: &[Element],
+    tail_elements: &[Element],
+    chars: &[char],
+    sep: usize,
+    prefix: &[char],
+    options: Options,
+) -> bool {
+    if !whole_elements
+        .iter()
+        .any(|e| e.kind == ElementKind::Episode)
+    {
+        return false;
+    }
+    let Some(whole_title) = whole_elements.iter().find(|e| e.kind == ElementKind::Title) else {
+        return false;
+    };
+    let Some(tail_title) = tail_elements.iter().find(|e| e.kind == ElementKind::Title) else {
+        return false;
+    };
+    let Some(separator) = chars.get(sep) else {
+        return false;
+    };
+
+    let component_start = prefix
+        .iter()
+        .rposition(|&c| is_path_separator(c))
+        .map_or(0, |i| i.saturating_add(1));
+    let component: String = prefix
+        .get(component_start..)
+        .unwrap_or_default()
+        .iter()
+        .collect();
+    let Some(component_title) = crate::parse(&component, options)
+        .into_iter()
+        .find(|e| e.kind == ElementKind::Title)
+    else {
+        return false;
+    };
+
+    // A folder restating the file's title is a real directory.
+    if component_title.value == tail_title.value {
+        return false;
+    }
+
+    whole_title.value == format!("{}{separator}{}", component_title.value, tail_title.value)
 }
 
 /// Does the component after a separator parse as a real filename, rather than as
@@ -93,10 +165,10 @@ fn directory_boundary(chars: &[char], options: Options) -> Option<usize> {
 ///       lives in the parent folder, e.g. `05 - Episode.mkv`); or
 ///   (c) its title echoes the parent component (the folder restates the show,
 ///       e.g. `My Show/My Show - 01.mkv`).
-fn looks_like_filename(prefix: &[char], tail: &[char], options: Options) -> bool {
-    let tail_input: String = tail.iter().collect();
-    let elements = crate::parse(&tail_input, options);
-
+///
+/// Signal (a) holds for nearly every real filename, so [`continues_a_title`]
+/// runs first to veto a slash-title that merely carries metadata.
+fn looks_like_filename(elements: &[Element], prefix: &[char], options: Options) -> bool {
     // (a) own release metadata.
     if elements.iter().any(|e| is_release_descriptor(e.kind)) {
         return true;

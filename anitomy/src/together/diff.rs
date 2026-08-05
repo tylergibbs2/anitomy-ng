@@ -11,7 +11,10 @@ use crate::element::{Element, ElementKind};
 /// from the sole numeric varying span, or leave them untouched if it's absent
 /// or ambiguous.
 pub(super) fn reconcile(results: &mut [Vec<Element>], chars: &[Vec<char>]) {
-    let candidates: Vec<Region> = variable_regions(chars)
+    let regions = variable_regions(chars);
+    demote_invariant_episodes(results, chars, &regions);
+
+    let candidates: Vec<Region> = regions
         .into_iter()
         .filter(|region| is_episode_candidate(region, results, chars))
         .collect();
@@ -26,6 +29,75 @@ pub(super) fn reconcile(results: &mut [Vec<Element>], chars: &[Vec<char>]) {
         apply_episode(result, region.prefix, variant);
     }
     fill_missing_titles(results);
+}
+
+/// Drop an episode identical across the whole set, giving the digits back to
+/// the title: an episode is what distinguishes one file from the next, so a
+/// number every member repeats belongs to the series name (`Golgo 13`).
+///
+/// Only a *guessed* number is demotable. A set can legitimately be one episode
+/// in two resolutions or versions, where the number is invariant and genuinely
+/// the episode — but there it carries an explicit marker. See
+/// [`preceded_by_word`].
+fn demote_invariant_episodes(
+    results: &mut [Vec<Element>],
+    chars: &[Vec<char>],
+    regions: &[Region],
+) {
+    if regions.is_empty() {
+        return;
+    }
+
+    for (result, cs) in results.iter_mut().zip(chars) {
+        let varying = |e: &Element| {
+            regions.iter().any(|r| {
+                let end = cs.len().saturating_sub(r.suffix);
+                overlaps(e, r.prefix, end)
+            })
+        };
+        let Some(idx) = result.iter().position(|e| {
+            e.kind == ElementKind::Episode && !varying(e) && preceded_by_word(cs, e.position)
+        }) else {
+            continue;
+        };
+
+        let episode = result.remove(idx);
+        absorb_into_title(result, cs, &episode);
+    }
+}
+
+/// Does a word run straight into the number at `pos`, with only spacing between?
+/// That's the shape the per-file parser guesses at; a dash, a bracket, or the
+/// start of the name is an explicit marker and is left alone.
+fn preceded_by_word(cs: &[char], pos: usize) -> bool {
+    cs.get(..pos)
+        .and_then(|before| before.iter().rposition(|c| !matches!(c, ' ' | '_' | '.')))
+        .and_then(|i| cs.get(i))
+        .is_some_and(|c| c.is_alphanumeric())
+}
+
+/// Extend the title over a demoted episode when the title immediately precedes
+/// it; otherwise the digits are dropped, as they were already not in the title.
+fn absorb_into_title(result: &mut [Element], cs: &[char], episode: &Element) {
+    let end = episode
+        .position
+        .saturating_add(episode.value.chars().count());
+    let Some(title) = result.iter_mut().find(|e| e.kind == ElementKind::Title) else {
+        return;
+    };
+    let title_end = title.position.saturating_add(title.value.chars().count());
+    if title_end > episode.position {
+        return;
+    }
+    let gap_is_delimiters = cs
+        .get(title_end..episode.position)
+        .is_some_and(|gap| gap.iter().all(|c| !c.is_alphanumeric()));
+    if !gap_is_delimiters {
+        return;
+    }
+    if let Some(span) = cs.get(title.position..end) {
+        title.value = span.iter().collect();
+    }
 }
 
 /// A span is the episode only if every member's substring there is numeric and

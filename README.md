@@ -114,6 +114,48 @@ and value); `ElementKind`/`kind` covers title, episode, season, release group,
 video/audio terms, resolution, checksum, and so on — see
 [`anitomy/src/element.rs`](anitomy/src/element.rs) for the full set.
 
+### Parsing a path
+
+`parse` treats its input as one flat string, matching upstream — given a path,
+separators and duplicated folder text end up in the title. `parse_path` strips a
+real directory prefix first, and recovers a title that lives only in the parent
+folder. Both `/` and `\` are recognized on every platform, including UNC and
+drive-letter roots.
+
+An input with no directory prefix is exactly `parse`, and a separator inside a
+title (`Fate/stay night`) is left alone.
+
+```rust
+// parse      -> title "My Show/My Show"
+// parse_path -> title "My Show"
+let elements = anitomy_ng::parse_path(
+    "My Show/My Show - 01.mkv",
+    anitomy_ng::Options::default(),
+);
+```
+
+```python
+elements = anitomy_ng.parse_path("My Show/My Show - 01.mkv")
+```
+
+```ts
+import { parse_path } from "anitomy-ng";
+const elements = parse_path("My Show/My Show - 01.mkv");
+```
+
+```csharp
+var elements = Anitomy.ParsePath("My Show/My Show - 01.mkv");
+```
+
+On the command line, `--path` (`-p`) does the same:
+
+```sh
+anitomy --path 'My Show/My Show - 01.mkv'
+```
+
+For a *set* of related files, prefer `parse_together` below — it does everything
+`parse_path` does, plus uses what varies across the set.
+
 ### Parsing a set together
 
 `parse_together` parses a *set* of related filenames at once, returning one

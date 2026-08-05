@@ -327,3 +327,72 @@ fn result_count_matches_input_count() {
         mixed.len()
     );
 }
+
+/// Pins `parse_path` to the segmentation pass `parse_together` already runs, so
+/// the public entry point can't drift from what the `together` suite covers.
+#[test]
+fn parse_path_matches_a_single_item_batch() {
+    #[derive(Deserialize)]
+    struct InputOnly {
+        inputs: Vec<String>,
+    }
+
+    let cases: Vec<InputOnly> = serde_json::from_str(include_str!("fixtures/together.json"))
+        .unwrap_or_else(|e| panic!("together fixtures must parse: {e}"));
+
+    let options = anitomy_ng::Options::default();
+    let mut checked = 0usize;
+    for case in &cases {
+        for input in &case.inputs {
+            checked += 1;
+            let batched = anitomy_ng::parse_together(&[input.as_str()], options)
+                .into_iter()
+                .next()
+                .unwrap_or_default();
+            assert_eq!(
+                anitomy_ng::parse_path(input, options),
+                batched,
+                "parse_path diverged from a single-item parse_together on {input:?}"
+            );
+        }
+    }
+    assert!(checked > 0, "no together fixture inputs were checked");
+}
+
+/// A path-less name is the plain parse; a real prefix is not.
+#[test]
+fn parse_path_differs_from_parse_only_on_real_paths() {
+    let options = anitomy_ng::Options::default();
+
+    let bare = "[HorribleSubs] Show - 08 [1080p].mkv";
+    assert_eq!(
+        anitomy_ng::parse_path(bare, options),
+        anitomy_ng::parse(bare, options)
+    );
+
+    let title = |els: Vec<anitomy_ng::Element>| {
+        els.into_iter()
+            .find(|e| e.kind == anitomy_ng::ElementKind::Title)
+            .map(|e| e.value)
+    };
+
+    let echoed = "My Show/My Show - 01.mkv";
+    assert_eq!(
+        title(anitomy_ng::parse(echoed, options)).as_deref(),
+        Some("My Show/My Show")
+    );
+    assert_eq!(
+        title(anitomy_ng::parse_path(echoed, options)).as_deref(),
+        Some("My Show")
+    );
+
+    let batch = "Frieren (01-12) [Batch]/Frieren - 05 [1080p].mkv";
+    let episodes = |els: Vec<anitomy_ng::Element>| {
+        els.into_iter()
+            .filter(|e| e.kind == anitomy_ng::ElementKind::Episode)
+            .map(|e| e.value)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(episodes(anitomy_ng::parse(batch, options)), ["01", "12"]);
+    assert_eq!(episodes(anitomy_ng::parse_path(batch, options)), ["05"]);
+}
