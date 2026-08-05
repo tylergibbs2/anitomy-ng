@@ -6,7 +6,7 @@ members = ["anitomy", "anitomy-py", "anitomy-js", "anitomy-c"]
 exclude = ["scripts/adapters/rapptz"]
 
 [workspace.package]
-version = "1.0.7"
+version = "1.0.8"
 edition = "2021"
 # Floor for the published `anitomy-ng` crate, gated by `OnceLock` (1.70).
 # The bindings need more and override this; see each of their manifests.
