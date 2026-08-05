@@ -26,4 +26,4 @@ anitomy-ng = { path = "../anitomy" }
 # Generates include/anitomy.h from the extern "C" definitions so the header
 # can't drift from the ABI. Header generation is best-effort (see build.rs):
 # a cbindgen hiccup warns but never fails the library build.
-cbindgen = "0.27"
+cbindgen = "0.29"
