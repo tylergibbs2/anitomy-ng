@@ -116,9 +116,84 @@ pub(crate) fn parse(mut tokens: Vec<Token>, options: &Options) -> Vec<Element> {
     dedupe_zero_padded(&mut elements, ElementKind::Season);
 
     detect_content_bundle(&tokens, &mut elements);
+    drop_in_title_types(&tokens, &mut elements);
 
     elements.sort_by_key(|e| e.position);
     elements
+}
+
+/// Drop a `Type` an ambiguous `OP`/`ED`/`PV` keyword raised from inside a title
+/// (`Takt op.Destiny`, `s.CRY.ed`, `Co-Ed`). A real clip trails the title; these
+/// either sit before its end or are glued to adjacent word text.
+///
+/// `Movie`/`OVA`/`Gekijouban` are ambiguous too but legitimately mid-title, so
+/// this stays scoped to `EpisodeType`.
+fn drop_in_title_types(tokens: &[Token], elements: &mut Vec<Element>) {
+    use super::element::underscore_is_separator;
+    use super::keyword::KeywordKind;
+
+    if !elements.iter().any(|e| e.kind == ElementKind::Type) {
+        return;
+    }
+
+    let ambiguous_type_at = |position: usize| {
+        tokens.iter().position(|t| {
+            t.position == position
+                && t.keyword
+                    .is_some_and(|k| k.ambiguous && k.kind == KeywordKind::EpisodeType)
+        })
+    };
+
+    let underscore_separator = underscore_is_separator(tokens);
+    // The span is marked through its trailing delimiter; anchor on the last word.
+    let last_title = tokens.iter().rposition(|t| {
+        t.element_kind == Some(ElementKind::Title) && !super::token::is_delimiter_token(t)
+    });
+
+    elements.retain(|e| {
+        if e.kind != ElementKind::Type {
+            return true;
+        }
+        let Some(i) = ambiguous_type_at(e.position) else {
+            return true;
+        };
+        let interior_to_title = last_title.is_some_and(|last| {
+            i < last
+                && tokens
+                    .get(i)
+                    .is_some_and(|t| t.element_kind == Some(ElementKind::Title))
+        });
+        !interior_to_title && !is_word_glued(tokens, i, underscore_separator)
+    });
+}
+
+/// Is the token at `i` joined to neighbouring prose by a delimiter that isn't
+/// acting as this file's separator (`s.CRY.ed`, `Co-Ed`)?
+fn is_word_glued(tokens: &[Token], i: usize, underscore_separator: bool) -> bool {
+    use super::delimiter::is_space;
+    use super::token::{is_delimiter_token, TokenKind};
+
+    let separates = |t: &Token| {
+        t.value
+            .chars()
+            .next()
+            .is_some_and(|c| is_space(c) || (c == '_' && underscore_separator))
+    };
+    let is_prose = |t: &Token| {
+        matches!(t.kind, TokenKind::Text | TokenKind::Keyword)
+            && matches!(
+                t.element_kind,
+                None | Some(ElementKind::Title) | Some(ElementKind::EpisodeTitle)
+            )
+    };
+
+    let glued = |delimiter: Option<&Token>, beyond: Option<&Token>| {
+        delimiter.is_some_and(|d| is_delimiter_token(d) && !separates(d))
+            && beyond.is_some_and(is_prose)
+    };
+
+    glued(tokens.get(i.wrapping_sub(1)), tokens.get(i.wrapping_sub(2)))
+        || glued(tokens.get(i + 1), tokens.get(i + 2))
 }
 
 /// Folds a trailing `-<2-letter region>` back into a `Language` code the dash

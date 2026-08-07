@@ -11,8 +11,9 @@
 use crate::element::{Element, ElementKind};
 use crate::options::Options;
 
-/// Re-parse the filename component as authoritative, borrowing only a missing
-/// title from the parent folder; inputs with no directory prefix are unchanged.
+/// Re-parse the filename component as authoritative, borrowing a missing title
+/// or season from the directory components; inputs with no directory prefix are
+/// unchanged.
 pub(crate) fn parse_one(input: &str, options: Options) -> Vec<Element> {
     let chars: Vec<char> = input.chars().collect();
 
@@ -30,26 +31,85 @@ pub(crate) fn parse_one(input: &str, options: Options) -> Vec<Element> {
         element.position = element.position.saturating_add(dir_end);
     }
 
-    // Borrow a missing title from the immediate parent component only, so a UNC
-    // or drive-letter prefix can't glue itself into it.
-    if !elements.iter().any(|e| e.kind == ElementKind::Title) {
-        let parent_start = parent_component_start(&chars, dir_end);
-        if let Some(parent) = chars.get(parent_start..dir_end.saturating_sub(1)) {
-            let parent_input: String = parent.iter().collect();
-            if let Some(title) = crate::parse(&parent_input, options)
-                .into_iter()
-                .find(|e| e.kind == ElementKind::Title)
-            {
-                elements.push(Element {
-                    position: title.position.saturating_add(parent_start),
-                    ..title
-                });
-                elements.sort_by_key(|e| e.position);
+    borrow_from_ancestors(&mut elements, &chars, dir_end.saturating_sub(1), options);
+
+    elements
+}
+
+/// Fill a missing title/season from the directory components, nearest first.
+/// They can come from different levels (`Show/Season 2/…`), so a component
+/// yielding neither is skipped rather than ending the walk. Each is parsed
+/// alone, so a UNC or drive-letter root can't glue itself into a title.
+fn borrow_from_ancestors(
+    elements: &mut Vec<Element>,
+    chars: &[char],
+    dir_last: usize,
+    options: Options,
+) {
+    let mut want_title = !elements.iter().any(|e| e.kind == ElementKind::Title);
+    let mut want_season =
+        options.parse_season && !elements.iter().any(|e| e.kind == ElementKind::Season);
+
+    let mut borrowed = false;
+    for (start, end) in ancestor_components(chars, dir_last) {
+        if !want_title && !want_season {
+            break;
+        }
+        let Some(component) = chars.get(start..end) else {
+            continue;
+        };
+        // Skips a parse per ancestor for the common season-less filename.
+        if !want_title && !is_season_folder(component) {
+            continue;
+        }
+        let component_input: String = component.iter().collect();
+        for element in crate::parse(&component_input, options) {
+            match element.kind {
+                ElementKind::Title if want_title => want_title = false,
+                ElementKind::Season if want_season => want_season = false,
+                _ => continue,
             }
+            elements.push(Element {
+                position: element.position.saturating_add(start),
+                ..element
+            });
+            borrowed = true;
         }
     }
 
-    elements
+    if borrowed {
+        elements.sort_by_key(|e| e.position);
+    }
+}
+
+/// Could this be a bare season folder (`Season 2`)? A digit is necessary; a
+/// bracket means release tags, i.e. a show or batch folder.
+fn is_season_folder(component: &[char]) -> bool {
+    use crate::detail::bracket::{is_close_bracket, is_open_bracket};
+
+    component.iter().any(char::is_ascii_digit)
+        && !component
+            .iter()
+            .any(|&c| is_open_bracket(c) || is_close_bracket(c))
+}
+
+/// The separator-delimited components of `chars[..end]`, nearest first, as
+/// `(start, end)` char ranges.
+fn ancestor_components(chars: &[char], mut end: usize) -> Vec<(usize, usize)> {
+    let mut bounds = Vec::new();
+    loop {
+        let start = chars
+            .get(..end)
+            .and_then(|s| s.iter().rposition(|&c| is_path_separator(c)))
+            .map_or(0, |i| i.saturating_add(1));
+        if start < end {
+            bounds.push((start, end));
+        }
+        if start == 0 {
+            return bounds;
+        }
+        end = start.saturating_sub(1);
+    }
 }
 
 /// End (exclusive) of a real directory prefix, or `None`.
@@ -188,11 +248,36 @@ fn looks_like_filename(elements: &[Element], prefix: &[char], options: Options) 
         return true;
     };
 
-    // (c) title echoes the parent component.
-    let parent_input: String = prefix.iter().collect();
-    crate::parse(&parent_input, options)
-        .iter()
-        .any(|e| e.kind == ElementKind::Title && e.value == tail_title.value)
+    // (c) title echoes one of the directory components.
+    echoes_an_ancestor(&tail_title.value, prefix, options)
+}
+
+/// Does any directory component's own title restate `title`? Per component, not
+/// the prefix as one string: `Attack on Titan/Season 2` parses as the single
+/// title `Attack on Titan/Season` plus episode `2`, which echoes nothing.
+fn echoes_an_ancestor(title: &str, prefix: &[char], options: Options) -> bool {
+    ancestor_components(prefix, prefix.len())
+        .into_iter()
+        .filter_map(|(start, end)| prefix.get(start..end))
+        .any(|component| {
+            let component_input: String = component.iter().collect();
+            crate::parse(&component_input, options)
+                .iter()
+                .any(|e| e.kind == ElementKind::Title && same_title(&e.value, title))
+        })
+}
+
+/// Same show, ignoring delimiter normalization? The fold depends on which
+/// delimiters the whole run uses, so `Ex-Arm` alone becomes `Ex Arm` while
+/// `Ex-Arm 06.mkv` keeps the dash.
+fn same_title(a: &str, b: &str) -> bool {
+    let words = |s: &str| -> Vec<String> {
+        s.split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .map(str::to_lowercase)
+            .collect()
+    };
+    words(a) == words(b)
 }
 
 /// A kind that marks a self-contained release — anything a lone title fragment
@@ -206,18 +291,6 @@ fn is_release_descriptor(kind: ElementKind) -> bool {
             | ElementKind::EpisodeTitle
             | ElementKind::FileExtension
     )
-}
-
-/// Start of the component before the boundary separator at `dir_end - 1`.
-fn parent_component_start(chars: &[char], dir_end: usize) -> usize {
-    let boundary_sep = dir_end.saturating_sub(1);
-    let mut start = 0;
-    for i in 0..boundary_sep {
-        if chars.get(i).is_some_and(|&c| is_path_separator(c)) {
-            start = i.saturating_add(1);
-        }
-    }
-    start
 }
 
 fn is_path_separator(c: char) -> bool {

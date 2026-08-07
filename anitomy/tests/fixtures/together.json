@@ -1009,6 +1009,7 @@
       {
         "release_group": "Group",
         "title": "Show",
+        "season": "1",
         "episode": "01",
         "video_resolution": "1080p",
         "file_extension": "mkv"
@@ -1016,13 +1017,14 @@
       {
         "release_group": "Group",
         "title": "Show",
+        "season": "1",
         "episode": "02",
         "video_resolution": "1080p",
         "file_extension": "mkv"
       }
     ],
     "source": "anitomy-ng",
-    "note": "A three-level path segments to the filename regardless of depth."
+    "note": "A three-level path segments to the filename regardless of depth, and the season folder between them is promoted to a real season element."
   },
   {
     "name": "title-slash-with-group-tag",
@@ -1046,5 +1048,89 @@
     ],
     "source": "anitomy-ng",
     "note": "A group tag before an in-title '/' must not make the slash a boundary: the tail 'stay night' carries no metadata of its own, so the title stays whole."
+  },
+  {
+    "name": "season-folder-bare-episode",
+    "inputs": [
+      "Attack on Titan/Season 2/Attack on Titan - 05.mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Attack on Titan",
+        "season": "2",
+        "episode": "05",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun-plus#29",
+    "note": "The standard Plex/Jellyfin layout with a bracket-free basename. The echo test used to parse the whole prefix as one string -- `Attack on Titan/Season 2` yields the title `Attack on Titan/Season` plus episode `2`, matching nothing -- so no boundary was found and the directories leaked into the title. Now each component is tested separately."
+  },
+  {
+    "name": "season-folder-only-season",
+    "inputs": [
+      "Attack on Titan/Season 2/Attack on Titan - 05 (1080p).mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Attack on Titan",
+        "season": "2",
+        "episode": "05",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun-plus#29",
+    "note": "Folder-only season. The resolution tag was already enough to find the boundary and strip the prefix, but the season lived only in the directory and was dropped, silently recording progress against the wrong season. The borrow now covers season as well as title."
+  },
+  {
+    "name": "parent-echo-normalized-delimiters",
+    "inputs": [
+      "Ex-Arm/Ex-Arm 06.mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Ex-Arm",
+        "episode": "06",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun-plus#29",
+    "note": "The echo test compared raw title values, and a component parsed alone normalizes its delimiters differently: `Ex-Arm` alone becomes `Ex Arm` (a lone delimiter reads as the separator) while `Ex-Arm 06.mkv` keeps the dash (the space is the separator). The echo was missed and the folder stayed in the title. Compared word-wise now."
+  },
+  {
+    "name": "season-folder-title-only-in-parent",
+    "inputs": [
+      "Frieren/Season 2/[SubsPlease] - 05.mkv"
+    ],
+    "outputs": [
+      {
+        "release_group": "SubsPlease",
+        "title": "Frieren",
+        "season": "2",
+        "episode": "05",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun-plus#29",
+    "note": "Title and season come from different directory levels. The borrow used to consult the immediate parent only, so a season folder between the show folder and the file hid the title entirely."
+  },
+  {
+    "name": "jellyfin-absolute-path",
+    "inputs": [
+      "/mnt/media/Anime/Attack on Titan (2013) [imdbid-tt2560140]/Season 02/Attack on Titan - S02E05 - Historia [Bluray-1080p].mkv"
+    ],
+    "outputs": [
+      {
+        "title": "Attack on Titan",
+        "season": "02",
+        "episode": "05",
+        "episode_title": "Historia",
+        "source": "Bluray",
+        "video_resolution": "1080p",
+        "file_extension": "mkv"
+      }
+    ],
+    "source": "trektn/hakubun-plus#29",
+    "note": "A full Jellyfin library path. The filename states the season itself, so nothing is borrowed and the deep prefix is dropped structurally."
   }
 ]

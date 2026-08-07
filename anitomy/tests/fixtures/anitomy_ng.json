@@ -814,5 +814,76 @@
       "episode_title": "Reigen Arataka",
       "file_extension": "mkv"
     }
+  },
+  {
+    "input": "Takt op.Destiny (2021) - S01E01 - 001 - Conduct -Creed- [Bluray-1080p].mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "A title containing `op.` must not raise a type. `OP` is flagged ambiguous, so it is never *identified* and the title keeps it -- but parse_keywords emitted the element anyway, and a consumer filtering out opening/ending clips dropped all 12 episodes of the show. Suppressed by drop_in_title_types: the title runs past the keyword, and a non-separator `.` glues it to `Destiny`.",
+    "output": {
+      "title": "Takt op.Destiny",
+      "year": "2021",
+      "season": "01",
+      "episode": "01",
+      "episode_title": "001 - Conduct -Creed",
+      "source": "Bluray",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Cromartie High School - 1x03 - Cromartie High (Co-Ed).mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "`Co-Ed` in an episode title must not raise an ending type. Enclosed, so the ambiguity guard in parse_keywords does not apply; the dash gluing `Ed` to `Co` is what gives it away.",
+    "output": {
+      "title": "Cromartie High School",
+      "season": "1",
+      "episode": "03",
+      "episode_title": "Cromartie High",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Group] s.CRY.ed - 01 [1080p].mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "The case the `ED` keyword's own AMBIGUOUS comment cites. The dot before `ed` is punctuation inside one word, not the file's separator (the space is), so no type.",
+    "output": {
+      "release_group": "Group",
+      "title": "s.CRY.ed",
+      "episode": "01",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "My Unique Skill Makes Me OP even at Level 1 - 03.mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "The other case the `OP` keyword comment cites. Nothing glues this one -- it is a free-standing word -- but the title runs past it, which a real trailing OP tag never does.",
+    "output": {
+      "title": "My Unique Skill Makes Me OP even at Level 1",
+      "episode": "03",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "[Group] Some Show - OP (1080p).mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "The genuine creditless-opening shape, kept. The keyword trails the title rather than sitting inside it, and spaces on both sides separate rather than glue -- so suppressing the false positives above must not reach this.",
+    "output": {
+      "release_group": "Group",
+      "title": "Some Show - OP",
+      "type": "OP",
+      "video_resolution": "1080p",
+      "file_extension": "mkv"
+    }
+  },
+  {
+    "input": "Nogizaka Haruka no Himitsu - Purezza - OP.mkv",
+    "source": "trektn/hakubun-plus#29",
+    "note": "Genuine trailing OP with no release tags after it, so the `.` before the extension is the only neighbour. An already-claimed extension is not prose, so it does not read as glue.",
+    "output": {
+      "title": "Nogizaka Haruka no Himitsu - Purezza - OP",
+      "type": "OP",
+      "file_extension": "mkv"
+    }
   }
 ]
