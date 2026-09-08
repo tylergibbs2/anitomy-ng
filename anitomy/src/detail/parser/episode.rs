@@ -18,7 +18,7 @@ use crate::detail::delimiter::is_space;
 use crate::detail::keyword::KeywordKind;
 use crate::detail::token::{
     is_close_bracket_token, is_dash_token, is_delimiter_token, is_free_token,
-    is_not_delimiter_token, is_numeric_token, Token, TokenKind,
+    is_not_delimiter_token, is_numeric_token, is_open_bracket_token, Token, TokenKind,
 };
 use crate::detail::util::{byte_to_char_offset, equal_ignore_ascii_case, to_int};
 use crate::element::{Element, ElementKind};
@@ -96,6 +96,37 @@ fn match_episode_token(value: &str) -> Option<EpisodeTokenMatch> {
 
 fn is_episode_delimiter(token: &Token) -> bool {
     is_delimiter_token(token) && matches!(token.value.chars().next(), Some('-' | '~' | '&' | '+'))
+}
+
+/// The absolute episode number beside a season marker, as in `- 083 (S06E32)`.
+fn find_alternative_episode_number(
+    tokens: &[Token],
+    idx: usize,
+    m: &EpisodeTokenMatch,
+) -> Option<usize> {
+    let candidate = find_prev_token(tokens, idx, |t| {
+        is_not_delimiter_token(t) && !is_open_bracket_token(t) && !is_close_bracket_token(t)
+    })?;
+    let absolute = tokens
+        .get(candidate)
+        .filter(|t| is_free_token(t) && is_numeric_token(t))
+        .map(|t| to_int(t.value))?;
+    let season = to_int(&m.season_s.as_ref().or(m.season_x.as_ref())?.0);
+    let episode = to_int(&m.episode.0);
+    if absolute < episode {
+        return None;
+    }
+    // `Show - 5 (S05E03)`: restates the season.
+    if absolute == season && absolute != episode {
+        return None;
+    }
+    let dash_anchored = tokens
+        .get(..candidate)?
+        .iter()
+        .rev()
+        .take_while(|t| is_delimiter_token(t))
+        .any(is_dash_token);
+    dash_anchored.then_some(candidate)
 }
 
 /// Beyond upstream: a keyword-prefixed episode match (e.g. `EP07`, `OVA3`,
@@ -294,6 +325,9 @@ fn parse_episode_token_strategy(
         }
         if let Some((after_idx, m2)) = range_next {
             apply_episode_match(tokens, after_idx, &m2, elements, options);
+        }
+        if let Some(alt_idx) = find_alternative_episode_number(tokens, idx, &m1) {
+            add_element_from_token(tokens, alt_idx, elements);
         }
     }
 }

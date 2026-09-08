@@ -885,5 +885,43 @@
       "type": "OP",
       "file_extension": "mkv"
     }
+  },
+  {
+    "input": "[Kaleido-subs] Blue Archive the Animation - 07 (S01E07) - (WEB 1080p HEVC x265 10-bit E-AC3 2.0) [3B0015AF]",
+    "source": "erengy/anitomy#25",
+    "note": "The episode is stated twice. The marker ends strategy 1, so the loose 07 is left for the title.",
+    "output": {
+      "release_group": "Kaleido-subs",
+      "title": "Blue Archive the Animation",
+      "season": "01",
+      "episode": "07",
+      "source": "WEB",
+      "video_resolution": "1080p",
+      "video_term": [
+        "HEVC",
+        "x265",
+        "10-bit"
+      ],
+      "audio_term": [
+        "E-AC3",
+        "2.0"
+      ],
+      "file_checksum": "3B0015AF"
+    }
+  },
+  {
+    "input": "Fairy Tail - 83 (S06E32) - Iron Fist of the Fire Dragon.mkv",
+    "source": "erengy/anitomy#25",
+    "note": "The loose number is the absolute episode, so both survive.",
+    "output": {
+      "title": "Fairy Tail",
+      "season": "06",
+      "episode": [
+        "83",
+        "32"
+      ],
+      "episode_title": "Iron Fist of the Fire Dragon",
+      "file_extension": "mkv"
+    }
   }
 ]
